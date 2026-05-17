@@ -1,0 +1,25 @@
+:root {
+  --color-bg: #f7f2eb;
+  --color-surface: #fffaf5;
+  --color-surface-strong: #ffffff;
+
+  --color-lavender: #e8ddf5;
+  --color-lavender-strong: #c8a7ee;
+  --color-purple: #6f4f9c;
+  --color-deep-purple: #4d3575;
+
+  --color-pink: #f7b7d2;
+  --color-coral: #ff8f70;
+  --color-mint: #bfe8d4;
+  --color-sky: #b8ddf2;
+
+  --color-text: #2f2437;
+  --color-muted: #776a7f;
+  --color-border: #dbcdbf;
+
+  --radius-card: 24px;
+  --radius-button: 999px;
+
+  --shadow-card: 0 18px 35px rgba(64, 44, 84, 0.14);
+  --shadow-soft: 0 10px 20px rgba(64, 44, 84, 0.1);
+}
