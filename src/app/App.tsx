@@ -1,6 +1,14 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import {
+  BrowserRouter,
+  Navigate,
+  Outlet,
+  Route,
+  Routes,
+  useLocation,
+} from "react-router-dom";
 import { AppShell } from "./layout/AppShell";
 import { AuthProvider } from "../shared/auth/AuthProvider";
+import { useAuthUser } from "../shared/auth/useAuthUser";
 import { DashboardPage } from "../features/dashboard/DashboardPage";
 import { TasksPage } from "../features/tasks/pages/TasksPage";
 import { ResearchPage } from "../features/research/pages/ResearchPage";
@@ -34,16 +42,74 @@ import { OfficeHoursPage } from "../features/teaching/pages/OfficeHoursPage";
 import { CourseNotesPage } from "../features/teaching/pages/CourseNotesPage";
 import { TeachingResourcesPage } from "../features/teaching/pages/TeachingResourcesPage";
 
+function AuthLoadingScreen() {
+  return (
+    <main className="auth-loading-screen">
+      <div className="garden-card">
+        <p className="eyebrow">Account</p>
+        <h1>Checking your sign-in...</h1>
+        <p className="muted-text">
+          Scholarly Spoon Garden is finding the right workspace for you.
+        </p>
+      </div>
+    </main>
+  );
+}
+
+function RootRedirect() {
+  const { user, loading } = useAuthUser();
+
+  if (loading) {
+    return <AuthLoadingScreen />;
+  }
+
+  return <Navigate to={user ? "/dashboard" : "/login"} replace />;
+}
+
+function LoginRoute() {
+  const { user, loading } = useAuthUser();
+
+  if (loading) {
+    return <AuthLoadingScreen />;
+  }
+
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <LoginPage />;
+}
+
+function ProtectedLayout() {
+  const { user, loading } = useAuthUser();
+  const location = useLocation();
+
+  if (loading) {
+    return <AuthLoadingScreen />;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+
+  return (
+    <AppShell>
+      <Outlet />
+    </AppShell>
+  );
+}
+
 export function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <AppShell>
-          <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Routes>
+          <Route path="/" element={<RootRedirect />} />
+          <Route path="/login" element={<LoginRoute />} />
+
+          <Route element={<ProtectedLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/tasks" element={<TasksPage />} />
-            <Route path="/login" element={<LoginPage />} />
             <Route path="/research" element={<ResearchPage />} />
             <Route path="/research/:projectId" element={<ResearchProjectPage />} />
             <Route path="/research/:projectId/tasks" element={<ResearchTasksPage />} />
@@ -99,8 +165,10 @@ export function App() {
             <Route path="/mindspace" element={<MindspacePage />} />
             <Route path="/timer-log" element={<TimerLogPage />} />
             <Route path="/settings" element={<SettingsPage />} />
-          </Routes>
-        </AppShell>
+          </Route>
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </BrowserRouter>
     </AuthProvider>
   );

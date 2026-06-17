@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   MINDSPACE_GOALS_STORAGE_KEY,
   MINDSPACE_ITEMS_STORAGE_KEY,
@@ -169,7 +169,7 @@ import {
   TIMER_CLOUD_USER_ID_KEY,
 } from "../../../../shared/firebase/timerSyncMetadata";
 import { useLocalStorage } from "../../../../shared/hooks/useLocalStorage";
-import { TASK_STORAGE_KEY, useTaskBridge } from "../../../../shared/hooks/useTaskBridge";
+import { useTaskBridge } from "../../../../shared/hooks/useTaskBridge";
 import { defaultAppSettings, type AppSettings } from "../../../../shared/types/settings";
 import type { TimerSession } from "../../../../shared/types/timer";
 import type { ManualWorkLogEntry } from "../../../../shared/types/workLog";
@@ -185,7 +185,7 @@ import {
   PLANNED_TASK_BLOCK_STORAGE_KEY,
 } from "../../../dashboard/utils/planningStorage";
 import { SyncBackupGate } from "./SyncBackupGate";
-import type { SyncOverviewItem, SyncPanelProps, SyncStatusMessage } from "./syncTypes";
+import type { SyncPanelProps, SyncStatusMessage } from "./syncTypes";
 
 type CloudSaveArea =
   | "settings"
@@ -242,8 +242,7 @@ export function CloudSaveControl({
   backupConfirmed,
   setBackupConfirmed,
   onExportBackup,
-  items,
-}: SyncPanelProps & { items: SyncOverviewItem[] }) {
+}: SyncPanelProps) {
   const { tasks, setTasks } = useTaskBridge();
   const [cloudSaveEnabled, setCloudSaveEnabled] = useLocalStorage<boolean>(
     CLOUD_SAVE_ENABLED_KEY,
@@ -261,7 +260,7 @@ export function CloudSaveControl({
     CLOUD_SAVE_USER_ID_KEY,
     "",
   );
-  const [areaStatus, setAreaStatus] = useLocalStorage<
+  const [, setAreaStatus] = useLocalStorage<
     Partial<Record<CloudSaveArea, CloudSaveAreaStatus>>
   >(CLOUD_SAVE_LAST_AREA_STATUS_KEY, {});
   const [cloudSaveStatus, setCloudSaveStatus] = useState<SyncStatusMessage>({
@@ -457,16 +456,8 @@ export function CloudSaveControl({
   const [, setResearchCloudUserId] =
     useLocalStorage<string>(RESEARCH_CLOUD_USER_ID_KEY, "");
 
-  const enabledAreas = useMemo(() => {
-    const enabledLabels = new Set(
-      items.filter((item) => item.enabled).map((item) => item.label),
-    );
-
-    return CLOUD_SAVE_ORDER.filter((item) => enabledLabels.has(item.label));
-  }, [items]);
-
   const shouldOfferSync =
-    cloudSaveEnabled && enabledAreas.length > 0 && isSyncStale(lastCloudSaveSyncAt);
+    cloudSaveEnabled && Boolean(user) && isSyncStale(lastCloudSaveSyncAt);
 
   function recordAreaSuccess(area: CloudSaveArea, message: string) {
     const now = new Date().toISOString();
@@ -757,20 +748,12 @@ export function CloudSaveControl({
       return;
     }
 
-    if (enabledAreas.length === 0) {
-      setCloudSaveStatus({
-        tone: "warning",
-        message: "Turn on at least one individual sync area before Cloud Save runs.",
-      });
-      return;
-    }
-
     setSyncing(true);
     setLastResults([]);
 
     const results: CloudSaveAreaResult[] = [];
 
-    for (const item of enabledAreas) {
+    for (const item of CLOUD_SAVE_ORDER) {
       try {
         const message = await runArea(item.area, user.uid);
         recordDomainSyncSuccess(item.area);
@@ -800,7 +783,7 @@ export function CloudSaveControl({
       setLastCloudSaveError(message);
       setCloudSaveStatus({ tone: "warning", message });
     } else {
-      const message = `Cloud Save synced ${results.length} enabled area(s).`;
+      const message = `Cloud Save synced ${results.length} supported area(s).`;
       setLastCloudSaveError("");
       setCloudSaveStatus({ tone: "success", message });
     }
@@ -813,19 +796,22 @@ export function CloudSaveControl({
     !user ||
     !cloudSaveEnabled ||
     syncing ||
-    loading ||
-    enabledAreas.length === 0;
+    loading;
+
+  const cloudSaveStatusLine = !user
+    ? "Sign in to use Cloud Save."
+    : cloudSaveEnabled
+      ? "Cloud Save is on. Enabled app areas will sync automatically."
+      : "Cloud Save is off. Your data stays local on this browser.";
 
   return (
     <section className="settings-task-sync-panel">
       <div className="card-heading-row">
         <div>
-          <p className="eyebrow">Cloud Save V1</p>
-          <h2>One-button Cloud Save</h2>
+          <p className="eyebrow">Account / Cloud</p>
+          <h2>Cloud Save</h2>
           <p className="muted-text">
-            Cloud Save coordinates the existing manual merge tools for the
-            areas you have individually enabled below. Manual tools remain
-            available below for troubleshooting.
+            Save and sync Scholarly Spoon Garden across devices.
           </p>
         </div>
         <span className="pill">
@@ -836,7 +822,6 @@ export function CloudSaveControl({
       <div className="settings-backup-summary">
         <span>{user ? `Signed in as ${user.email ?? "this account"}` : "Signed out"}</span>
         <span>{isConfigured ? "Firebase configured" : "Local-only mode"}</span>
-        <span>{enabledAreas.length} enabled area(s)</span>
         <span>
           {lastCloudSaveSyncAt
             ? `Last Cloud Save ${formatTaskSyncDate(lastCloudSaveSyncAt)}`
@@ -848,8 +833,8 @@ export function CloudSaveControl({
         <span>
           <strong>Enable Cloud Save</strong>
           <small>
-            This does not force-enable every area. It only coordinates the
-            individual sync areas you opt into below.
+            Uses the existing sync services for options, tasks, planning,
+            timer/manual logs, Mindspace, Service, Teaching, and Research.
           </small>
         </span>
         <input
@@ -872,8 +857,7 @@ export function CloudSaveControl({
 
       {isConfigured && !user ? (
         <p className="settings-backup-status is-warning">
-          Sign in is required before Cloud Save can be enabled. Local-first mode
-          still works while signed out.
+          Sign in to use Cloud Save.
         </p>
       ) : null}
 
@@ -886,8 +870,8 @@ export function CloudSaveControl({
 
       {shouldOfferSync ? (
         <p className="settings-backup-status is-warning">
-          Cloud Save is on. Sync all enabled areas now when you are ready.
-          Background automatic sync is deferred for a safer V2.
+          Cloud Save is on. Use Sync now when you want to merge local and cloud
+          data across supported app areas.
         </p>
       ) : null}
 
@@ -897,7 +881,7 @@ export function CloudSaveControl({
         onExportBackup={onExportBackup}
       >
         I exported a backup or understand Cloud Save will merge local and cloud
-        data for enabled areas without deleting missing local records.
+        data for supported areas without deleting missing local records.
       </SyncBackupGate>
 
       <div className="settings-backup-actions">
@@ -906,9 +890,11 @@ export function CloudSaveControl({
           onClick={handleSyncAllEnabledAreas}
           disabled={syncDisabled}
         >
-          {syncing ? "Syncing enabled areas..." : "Sync all enabled areas now"}
+          {syncing ? "Syncing..." : "Sync now"}
         </Button>
       </div>
+
+      <p className="settings-backup-status is-neutral">{cloudSaveStatusLine}</p>
 
       <p className={`settings-backup-status is-${cloudSaveStatus.tone}`}>
         {cloudSaveStatus.message}
@@ -919,23 +905,6 @@ export function CloudSaveControl({
           Last saved Cloud Save error: {lastCloudSaveError}
         </p>
       ) : null}
-
-      <div className="settings-backup-summary">
-        {CLOUD_SAVE_ORDER.map((item) => {
-          const isEnabled = enabledAreas.some(
-            (enabledArea) => enabledArea.area === item.area,
-          );
-          const status = areaStatus[item.area];
-
-          return (
-            <span key={item.area}>
-              {item.label}: {isEnabled ? "enabled" : "off"}
-              {status?.syncedAt ? ` · ${formatTaskSyncDate(status.syncedAt)}` : ""}
-              {status?.tone === "error" ? " · error" : ""}
-            </span>
-          );
-        })}
-      </div>
 
       {lastResults.length > 0 ? (
         <div className="settings-backup-summary">
@@ -948,24 +917,9 @@ export function CloudSaveControl({
       ) : null}
 
       <p className="muted-text">
-        Metadata keys: <code>{CLOUD_SAVE_ENABLED_KEY}</code>,{" "}
-        <code>{LAST_CLOUD_SAVE_SYNC_AT_KEY}</code>,{" "}
-        <code>{LAST_CLOUD_SAVE_ERROR_KEY}</code>,{" "}
-        <code>{CLOUD_SAVE_USER_ID_KEY}</code>, and{" "}
-        <code>{CLOUD_SAVE_LAST_AREA_STATUS_KEY}</code>. Sync order: Options,
-        Tasks, Planning, Timer/manual logs, Mindspace, Service, Teaching, then
-        Research.
-      </p>
-
-      <p className="muted-text">
-        Active timer state, files, images, PDFs, Firebase Storage, realtime
-        listeners, background intervals, and per-keystroke sync are not part of
-        Cloud Save V1.
-      </p>
-
-      <p className="muted-text">
-        Shared task storage remains in <code>{TASK_STORAGE_KEY}</code>; Cloud
-        Save still treats localStorage as the immediate source of truth.
+        Supported now: options, tasks, planning, timer/manual logs, Mindspace,
+        Service, Teaching, and Research. Files, images, PDFs, Firebase Storage,
+        realtime listeners, and active timer state are not part of Cloud Save yet.
       </p>
     </section>
   );

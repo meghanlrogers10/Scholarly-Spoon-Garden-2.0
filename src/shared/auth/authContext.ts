@@ -7,6 +7,8 @@ export type AuthContextValue = {
   isConfigured: boolean;
   missingConfigKeys: string[];
   error: string | null;
+  signInWithEmail: (email: string, password: string) => Promise<boolean>;
+  signUpWithEmail: (email: string, password: string) => Promise<boolean>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   clearError: () => void;

@@ -169,6 +169,12 @@
   padding-top: 1rem;
 }
 
+.settings-task-sync-panel:first-child {
+  margin-top: 0;
+  border-top: 0;
+  padding-top: 0;
+}
+
 .settings-task-sync-safety {
   display: flex;
   align-items: flex-start;

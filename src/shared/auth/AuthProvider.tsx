@@ -1,11 +1,14 @@
 import {
+  createUserWithEmailAndPassword,
   GoogleAuthProvider,
   onAuthStateChanged,
+  signInWithEmailAndPassword,
   signInWithPopup,
   signOut as firebaseSignOut,
   type User,
 } from "firebase/auth";
 import {
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -17,6 +20,46 @@ import {
   missingFirebaseEnvKeys,
 } from "../firebase/firebaseClient";
 import { AuthContext, type AuthContextValue } from "./authContext";
+
+function getFriendlyAuthError(authError: unknown, fallback: string) {
+  const code =
+    typeof authError === "object" &&
+    authError !== null &&
+    "code" in authError &&
+    typeof authError.code === "string"
+      ? authError.code
+      : "";
+
+  if (code === "auth/invalid-credential" || code === "auth/wrong-password") {
+    return "That email and password did not match an account.";
+  }
+
+  if (code === "auth/user-not-found") {
+    return "No account was found for that email.";
+  }
+
+  if (code === "auth/email-already-in-use") {
+    return "An account already exists for that email. Try signing in instead.";
+  }
+
+  if (code === "auth/weak-password") {
+    return "Please use a password with at least 6 characters.";
+  }
+
+  if (code === "auth/invalid-email") {
+    return "Please enter a valid email address.";
+  }
+
+  if (code === "auth/popup-closed-by-user") {
+    return "Google sign-in was closed before it finished.";
+  }
+
+  if (code === "auth/operation-not-allowed") {
+    return "This sign-in method is not enabled yet in Firebase Console.";
+  }
+
+  return authError instanceof Error ? authError.message : fallback;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -41,7 +84,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  async function signInWithGoogle() {
+  const signInWithEmail = useCallback(async (email: string, password: string) => {
+    if (!auth) {
+      setError("Firebase is not configured for this app build.");
+      return false;
+    }
+
+    setError(null);
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      return true;
+    } catch (authError) {
+      setError(
+        getFriendlyAuthError(authError, "Email sign-in did not complete.")
+      );
+      return false;
+    }
+  }, []);
+
+  const signUpWithEmail = useCallback(async (email: string, password: string) => {
+    if (!auth) {
+      setError("Firebase is not configured for this app build.");
+      return false;
+    }
+
+    setError(null);
+
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      return true;
+    } catch (authError) {
+      setError(
+        getFriendlyAuthError(authError, "Account creation did not complete.")
+      );
+      return false;
+    }
+  }, []);
+
+  const signInWithGoogle = useCallback(async () => {
     if (!auth) {
       setError("Firebase is not configured for this app build.");
       return;
@@ -55,14 +136,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await signInWithPopup(auth, provider);
     } catch (authError) {
       setError(
-        authError instanceof Error
-          ? authError.message
-          : "Google sign-in did not complete."
+        getFriendlyAuthError(authError, "Google sign-in did not complete.")
       );
     }
-  }
+  }, []);
 
-  async function signOut() {
+  const signOut = useCallback(async () => {
     if (!auth) {
       setUser(null);
       return;
@@ -79,7 +158,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           : "Sign out did not complete."
       );
     }
-  }
+  }, []);
+
+  const clearError = useCallback(() => setError(null), []);
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -88,11 +169,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isConfigured: isFirebaseConfigured,
       missingConfigKeys: missingFirebaseEnvKeys,
       error,
+      signInWithEmail,
+      signUpWithEmail,
       signInWithGoogle,
       signOut,
-      clearError: () => setError(null),
+      clearError,
     }),
-    [error, loading, user]
+    [
+      clearError,
+      error,
+      loading,
+      signInWithEmail,
+      signInWithGoogle,
+      signOut,
+      signUpWithEmail,
+      user,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
