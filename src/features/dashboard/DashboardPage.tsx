@@ -270,7 +270,7 @@ export function DashboardPage() {
 
   useEffect(() => {
     if (new URLSearchParams(location.search).get("shutdownReview") === "1") {
-      // Open the shutdown modal when Timer Log links back with the review query.
+      // Open the shutdown modal when Focus Bloom Log links back with the review query.
       /* eslint-disable react-hooks/set-state-in-effect */
       setIsEndOfDayReviewOpen(true);
       /* eslint-enable react-hooks/set-state-in-effect */

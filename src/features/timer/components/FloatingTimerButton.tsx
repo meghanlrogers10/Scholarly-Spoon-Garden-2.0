@@ -13,6 +13,7 @@ import { TIMER_SESSIONS_STORAGE_KEY } from "../../../shared/constants/timerStora
 import { useLocalStorage } from "../../../shared/hooks/useLocalStorage";
 import { useAppSettings } from "../../../shared/hooks/useAppSettings";
 import { useTaskBridge } from "../../../shared/hooks/useTaskBridge";
+import { DrSpoonbloomMascot } from "../../../shared/brand/DrSpoonbloomMascot";
 import { Button } from "../../../shared/ui/Button";
 import { useDailyCheckIn } from "../../dashboard/hooks/useDailyCheckIn";
 import { usePlannedTaskBlocks } from "../../dashboard/hooks/usePlannedTaskBlocks";
@@ -311,7 +312,7 @@ export function FloatingTimerButton() {
       "Notification" in window &&
       Notification.permission === "granted"
     ) {
-      new Notification("Pomodoro complete", {
+      new Notification("Focus bloom complete", {
         body: `${activeTimer.label} is ready to reflect on.`,
       });
     }
@@ -703,11 +704,11 @@ export function FloatingTimerButton() {
         onPointerUp={handleTimerPointerUp}
         onPointerCancel={handleTimerPointerCancel}
         onKeyDown={handleTimerKeyDown}
-        aria-label="Open focus timer"
-        title="Drag to move. Click to open timer."
+        aria-label="Open Focus Bloom timer"
+        title="Drag to move. Click to open Focus Bloom."
       >
-        <span className="timer-prism" aria-hidden="true" />
-        <strong>{activeTimer ? formatDuration(elapsedSeconds) : "Timer"}</strong>
+        <span className="timer-bloom-mark" aria-hidden="true" />
+        <strong>{activeTimer ? formatDuration(elapsedSeconds) : "Bloom"}</strong>
       </button>
 
       {isOpen && (
@@ -717,9 +718,16 @@ export function FloatingTimerButton() {
           aria-label="Focus timer panel"
         >
           <div className="timer-panel-header">
-            <div>
-              <p className="eyebrow">Focus</p>
-              <h2>Global Timer</h2>
+            <div className="timer-panel-title">
+              <DrSpoonbloomMascot
+                className="timer-panel-mascot"
+                interactive
+                size="compact"
+              />
+              <div>
+                <p className="eyebrow">Focus Bloom</p>
+                <h2>Spoon Timer</h2>
+              </div>
             </div>
 
             <button className="text-button" onClick={() => setIsOpen(false)}>
@@ -732,8 +740,8 @@ export function FloatingTimerButton() {
               <div className="timer-mode-line">
                 <span>
                   {activeTimer.mode === "pomodoro"
-                    ? `🍅 Pomodoro ${activeTimer.pomodoroMinutes}m`
-                    : "⏱️ Continuous"}
+                    ? `Focus bloom ${activeTimer.pomodoroMinutes}m`
+                    : "Open-ended bloom"}
                 </span>
 
                 {activeTimer.isPaused && <strong>Paused</strong>}
@@ -749,7 +757,7 @@ export function FloatingTimerButton() {
 
               {settings.timerVisualAlerts && completionAlertTimerId === activeTimer.id && (
                 <div className="timer-alert-box" role="status">
-                  Pomodoro complete. Stop and reflect, or keep going if that is
+                  Focus bloom complete. Stop and reflect, or keep going if that is
                   what today needs.
                 </div>
               )}
@@ -782,7 +790,7 @@ export function FloatingTimerButton() {
                       className="text-button"
                       onClick={openStopModal}
                     >
-                      Stop and reflect
+                      Session reflection
                     </button>
                   </div>
                 </div>
@@ -808,9 +816,9 @@ export function FloatingTimerButton() {
 
               <div className="timer-action-row">
                 <Button variant="soft" onClick={handlePauseResume}>
-                  {activeTimer.isPaused ? "Resume" : "Pause"}
+                  {activeTimer.isPaused ? "Grow this session" : "Pause the bloom"}
                 </Button>
-                <Button onClick={openStopModal}>Stop</Button>
+                <Button onClick={openStopModal}>Rest the sprout</Button>
               </div>
             </div>
           ) : (
@@ -818,7 +826,7 @@ export function FloatingTimerButton() {
               <p className="muted-text">
                 Start a session, link it to a task, and log how it actually went.
               </p>
-              <Button onClick={openStartModal}>Start timer</Button>
+              <Button onClick={openStartModal}>Begin a focus bloom</Button>
             </div>
           )}
 
@@ -826,7 +834,7 @@ export function FloatingTimerButton() {
             <div className="card-heading-row">
               <div>
                 <p className="eyebrow">Recent</p>
-                <h3>Session Log</h3>
+                <h3>Bloom Log</h3>
               </div>
               <span className="pill">{timerSessions.length}</span>
             </div>
@@ -865,8 +873,8 @@ export function FloatingTimerButton() {
           >
             <div className="modal-header">
               <div>
-                <p className="eyebrow">Timer</p>
-                <h2 id="timer-start-title">Start Timer</h2>
+                <p className="eyebrow">Focus Bloom</p>
+                <h2 id="timer-start-title">Begin a focus bloom</h2>
               </div>
 
               <button className="text-button" onClick={closeStartModal}>
@@ -967,15 +975,15 @@ export function FloatingTimerButton() {
                     value={mode}
                     onChange={(event) => setMode(event.target.value as TimerMode)}
                   >
-                    <option value="continuous">Continuous</option>
-                    <option value="pomodoro">Pomodoro</option>
+                    <option value="continuous">Open-ended bloom</option>
+                    <option value="pomodoro">Timed focus bloom</option>
                   </select>
                 </label>
               </div>
 
               {mode === "pomodoro" && (
                 <label>
-                  <span>Pomodoro minutes</span>
+                  <span>Bloom minutes</span>
                   <input
                     type="number"
                     min={5}
@@ -989,11 +997,11 @@ export function FloatingTimerButton() {
               )}
 
               <label>
-                <span>Pre-note</span>
+                <span>Before-you-start note</span>
                 <textarea
                   value={preNote}
                   onChange={(event) => setPreNote(event.target.value)}
-                  placeholder="What do you intend to do?"
+                  placeholder="What are you actually trying to grow here?"
                   rows={3}
                 />
               </label>
@@ -1003,7 +1011,7 @@ export function FloatingTimerButton() {
                   Cancel
                 </Button>
                 <Button type="button" onClick={handleStartTimer}>
-                  Start
+                  Grow this session
                 </Button>
               </div>
             </div>
@@ -1021,8 +1029,8 @@ export function FloatingTimerButton() {
           >
             <div className="modal-header">
               <div>
-                <p className="eyebrow">Timer</p>
-                <h2 id="timer-stop-title">Log Your Session</h2>
+                <p className="eyebrow">Session reflection</p>
+                <h2 id="timer-stop-title">What did this actually take?</h2>
               </div>
 
               <button className="text-button" onClick={handleCancelStop}>

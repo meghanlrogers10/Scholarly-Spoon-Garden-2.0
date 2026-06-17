@@ -6,7 +6,7 @@ const navItems = [
   { to: "/teaching", emoji: "🎓", label: "Teaching" },
   { to: "/service", emoji: "🌱", label: "Service" },
   { to: "/mindspace", emoji: "🧠", label: "Mindspace" },
-  { to: "/timer-log", emoji: "⏱️", label: "Timer Log" },
+  { to: "/timer-log", emoji: "🌸", label: "Focus Bloom Log" },
   { to: "/settings", emoji: "⚙️", label: "Settings" },
 ];
 

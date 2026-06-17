@@ -42,27 +42,6 @@
   font-weight: 700;
 }
 
-.professor-sprout {
-  display: grid;
-  gap: 0.45rem;
-  justify-items: center;
-  margin: 0;
-  min-width: 0;
-}
-
-.professor-sprout-svg {
-  display: block;
-  width: min(100%, 25rem);
-  height: auto;
-  filter: drop-shadow(0 1rem 1.4rem rgba(94, 63, 146, 0.12));
-}
-
-.professor-sprout figcaption {
-  color: var(--color-deep-purple);
-  font-size: 0.9rem;
-  font-weight: 800;
-}
-
 .auth-card {
   display: grid;
   gap: 1rem;
@@ -174,7 +153,7 @@
     margin-top: 0;
   }
 
-  .professor-sprout-svg {
+  .auth-hero .dr-spoonbloom-hero {
     width: min(100%, 21rem);
   }
 

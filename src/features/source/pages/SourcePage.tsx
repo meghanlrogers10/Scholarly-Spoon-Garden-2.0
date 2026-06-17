@@ -7,7 +7,7 @@ const finishedItems = [
   "Global app shell and navigation",
   "Dashboard command center",
   "Tasks page with filters and Today toggle",
-  "Floating timer and Timer Log foundation",
+  "Floating timer and Focus Bloom Log foundation",
   "Research local MVP with projects, literature, notes, drafts, submissions, PRISMA, imports, DOI lookup, and exports",
   "Teaching local MVP with courses, prep, grading, TA follow-up, office hours, announcements, notes, and resources",
   "Service local MVP with load snapshot, triage, inbox, buckets, committees, and advising",
@@ -28,7 +28,7 @@ const weakSpots = [
   "Task model is not rich enough for time reality yet",
   "Mindspace is still mostly a shell",
   "Settings is too small and needs to become Options",
-  "Timer Log is still a history page, not a Time Reality Center",
+  "Focus Bloom Log is still a history page, not a Time Reality Center",
   "No Daily Check-In yet",
   "No Working Blocks yet",
   "No Today Builder yet",
@@ -44,7 +44,7 @@ const nextSprints = [
   "Today Builder",
   "Planned vs Actual Calendar",
   "Timer Stop Feedback",
-  "Timer Log Time Reality Center",
+  "Focus Bloom Log Time Reality Center",
   "End-of-Day Review",
   "Mindspace V1",
   "Options V1",
@@ -169,7 +169,7 @@ export function SourcePage() {
               <Link to="/tasks">Tasks</Link>
             </li>
             <li>
-              <Link to="/timer-log">Timer Log</Link>
+              <Link to="/timer-log">Focus Bloom Log</Link>
             </li>
             <li>
               <Link to="/mindspace">Mindspace</Link>

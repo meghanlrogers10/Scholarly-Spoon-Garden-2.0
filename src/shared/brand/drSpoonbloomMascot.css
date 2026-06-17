@@ -1,0 +1,99 @@
+.dr-spoonbloom {
+  display: grid;
+  gap: 0.45rem;
+  justify-items: center;
+  margin: 0;
+  min-width: 0;
+  color: var(--color-deep-purple);
+}
+
+.dr-spoonbloom-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 1rem 1.4rem rgba(94, 63, 146, 0.12));
+  transform-origin: 50% 78%;
+}
+
+.dr-spoonbloom-hero {
+  width: min(100%, 25rem);
+}
+
+.dr-spoonbloom-compact {
+  width: 4.8rem;
+}
+
+.dr-spoonbloom-caption {
+  color: var(--color-deep-purple);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.dr-spoonbloom-button {
+  border: 1px solid rgba(209, 191, 163, 0.78);
+  border-radius: 8px;
+  background: rgba(255, 250, 247, 0.9);
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  padding: 0.25rem;
+  transition:
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.dr-spoonbloom-button:hover,
+.dr-spoonbloom-button:focus-visible {
+  background: rgba(230, 219, 242, 0.68);
+  box-shadow:
+    var(--shadow-card),
+    0 0 0 3px rgba(195, 167, 238, 0.28);
+  outline: 0;
+}
+
+.dr-spoonbloom-button.is-dancing .dr-spoonbloom-svg {
+  animation: spoonbloom-dance 760ms ease-in-out;
+}
+
+@keyframes spoonbloom-dance {
+  0% {
+    transform: rotate(0deg) translateY(0) scale(1);
+  }
+
+  20% {
+    transform: rotate(-6deg) translateY(-3px) scale(1.03);
+  }
+
+  40% {
+    transform: rotate(6deg) translateY(0) scale(1);
+  }
+
+  60% {
+    transform: rotate(-4deg) translateY(-2px) scale(1.02);
+  }
+
+  80% {
+    transform: rotate(4deg) translateY(0) scale(1);
+  }
+
+  100% {
+    transform: rotate(0deg) translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dr-spoonbloom-button {
+    transition: none;
+  }
+
+  .dr-spoonbloom-button.is-dancing {
+    background: rgba(230, 219, 242, 0.76);
+    box-shadow:
+      var(--shadow-card),
+      0 0 0 3px rgba(195, 167, 238, 0.34);
+  }
+
+  .dr-spoonbloom-button.is-dancing .dr-spoonbloom-svg {
+    animation: none;
+  }
+}

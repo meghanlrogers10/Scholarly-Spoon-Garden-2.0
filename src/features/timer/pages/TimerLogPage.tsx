@@ -389,7 +389,7 @@ export function TimerLogPage() {
     <section className="page-stack timer-log-page">
       <PageHeader
         eyebrow="Work history"
-        title="Timer Log"
+        title="Focus Bloom Log"
         description="Time reality is a map, not a moral judgment."
       />
 

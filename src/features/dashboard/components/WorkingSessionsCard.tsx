@@ -125,7 +125,7 @@ export function WorkingSessionsCard({
       </div>
 
       <p className="muted-text">
-        Full session history lives in Timer Log. Keep the dashboard light.
+        Full session history lives in Focus Bloom Log. Keep the dashboard light.
       </p>
     </Card>
   );

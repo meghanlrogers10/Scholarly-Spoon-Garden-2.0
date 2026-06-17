@@ -182,7 +182,7 @@ function getCategoryClass(category: CalendarItem["category"]) {
 
 function getSourceLabel(source: CalendarSource) {
   if (source === "timed") return "Timed";
-  if (source === "pomodoro") return "Pomodoro";
+  if (source === "pomodoro") return "Focus bloom";
   if (source === "task") return "Task";
   if (source === "working-block") return "Available work time";
   if (source === "planned-task") return "Planned task";

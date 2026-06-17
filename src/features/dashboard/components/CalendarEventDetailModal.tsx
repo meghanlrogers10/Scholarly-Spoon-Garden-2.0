@@ -40,7 +40,7 @@ const estimateAccuracyLabels: Record<EstimateAccuracy, string> = {
 
 function getSourceLabel(source: CalendarSource) {
   if (source === "timed") return "Timed focus session";
-  if (source === "pomodoro") return "Pomodoro session";
+  if (source === "pomodoro") return "Focus bloom session";
   if (source === "task") return "Due-date task";
   if (source === "working-block") return "Working block";
   if (source === "planned-task") return "Planned task block";
