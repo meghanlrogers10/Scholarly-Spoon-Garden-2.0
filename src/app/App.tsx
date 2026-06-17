@@ -33,7 +33,6 @@ import { TeachingAnnouncementsPage } from "../features/teaching/pages/TeachingAn
 import { OfficeHoursPage } from "../features/teaching/pages/OfficeHoursPage";
 import { CourseNotesPage } from "../features/teaching/pages/CourseNotesPage";
 import { TeachingResourcesPage } from "../features/teaching/pages/TeachingResourcesPage";
-import { SourcePage } from "../features/source/pages/SourcePage";
 
 export function App() {
   return (
@@ -43,7 +42,6 @@ export function App() {
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/source" element={<SourcePage />} />
             <Route path="/tasks" element={<TasksPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/research" element={<ResearchPage />} />
