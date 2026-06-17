@@ -1,0 +1,1801 @@
+/* DASHBOARD LAYOUT */
+
+.dashboard-page {
+  padding-bottom: 2rem;
+}
+
+#main-container {
+  width: 100%;
+}
+
+#layout {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  max-width: 1180px;
+  margin: auto;
+  padding: 1rem;
+}
+
+#taskHints {
+  order: -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-areas:
+    "plan week"
+    "low sessions";
+  gap: 1rem;
+  flex: 1 1 100%;
+  width: 100%;
+  max-width: 1180px;
+  margin: 1rem auto;
+  align-items: stretch;
+}
+
+#todayTasksCard {
+  grid-area: plan;
+}
+
+#weekTasksCard {
+  grid-area: week;
+}
+
+#lowEnergyCard {
+  grid-area: low;
+}
+
+#workingSessionsCard {
+  grid-area: sessions;
+}
+
+#taskHints .hint-card {
+  height: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  overflow: hidden;
+}
+
+#todayTasksCard .task-list,
+#weekTasksCard .upcoming-list,
+#lowEnergyCard .low-energy-list {
+  overflow-y: auto;
+  padding-right: 0.35rem;
+}
+
+#todayTasksCard .task-list {
+  max-height: 150px;
+}
+
+#lowEnergyCard .low-energy-list {
+  max-height: 255px;
+}
+
+#todayTasksCard .task-list::-webkit-scrollbar,
+#weekTasksCard .upcoming-list::-webkit-scrollbar,
+#lowEnergyCard .low-energy-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+#todayTasksCard .task-list::-webkit-scrollbar-thumb,
+#weekTasksCard .upcoming-list::-webkit-scrollbar-thumb,
+#lowEnergyCard .low-energy-list::-webkit-scrollbar-thumb {
+  background: rgba(111, 79, 156, 0.35);
+  border-radius: 999px;
+}
+
+.dashboard-support-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  align-items: stretch;
+}
+
+.dashboard-support-grid > .garden-card,
+.dashboard-support-grid > .hint-card {
+  min-height: 320px;
+}
+
+/* SPOON TRACKER */
+
+#spoon-tracker {
+  max-width: 980px;
+  margin: 1.25rem auto 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: rgba(255, 250, 247, 0.58);
+  border: 1px solid rgba(209, 191, 163, 0.65);
+  border-radius: 12px;
+}
+
+#spoon-tracker h2 {
+  margin: 0;
+  font-size: 1.7rem;
+  color: var(--color-purple);
+}
+
+#spoon-bouquet {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 8px;
+}
+
+.spoon-button {
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: #fffaf7;
+  padding: 0.45rem 0.65rem;
+  font-size: 1.3rem;
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+
+.spoon-button.active {
+  filter: grayscale(0);
+  opacity: 1;
+  background: var(--color-header-lavender);
+}
+
+.spoon-actions {
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+.spoon-actions button {
+  background: var(--color-header-lavender);
+  color: var(--color-deep-purple);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.45rem 0.8rem;
+}
+
+#energy-message {
+  text-align: center;
+  font-style: italic;
+  margin-top: 0.5rem;
+  color: var(--color-soft-muted);
+}
+
+/* MOTIVATION + STATUS */
+
+#motivation-banner {
+  max-width: 980px;
+  text-align: center;
+  margin: 0.5rem auto 1rem;
+  background: #fffaf7;
+  border: 1px dashed var(--color-border);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+}
+
+#quote {
+  font-style: italic;
+  font-size: 1.2rem;
+  color: var(--color-soft-muted);
+  margin: 0;
+}
+
+.dashboard-status-strip {
+  max-width: 980px;
+  margin: 0 auto 1rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 0 1rem;
+}
+
+.dashboard-status-strip div {
+  background: #f9f9f9;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0.75rem;
+  box-shadow: var(--shadow-card);
+}
+
+.dashboard-status-strip strong {
+  display: block;
+  color: var(--color-purple);
+  font-size: 0.95rem;
+}
+
+.dashboard-status-strip span {
+  display: block;
+  color: var(--color-soft-muted);
+  font-size: 0.85rem;
+  margin-top: 0.15rem;
+}
+
+/* TASK / LIST ROWS */
+
+.task-list,
+.upcoming-list,
+.session-list,
+.captured-list,
+.completed-task-list,
+.manual-work-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.task-row,
+.upcoming-row,
+.session-row,
+.captured-item,
+.completed-task-item,
+.manual-work-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px;
+  border: 1px dashed var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface-warm);
+}
+
+.task-row strong,
+.upcoming-row strong,
+.session-row strong,
+.captured-item strong,
+.completed-task-item strong,
+.manual-work-item strong {
+  color: var(--color-text);
+}
+
+.task-row p,
+.upcoming-row p,
+.session-row p,
+.manual-work-item p {
+  margin: 0.25rem 0 0;
+  color: var(--color-soft-muted);
+  font-size: 0.85rem;
+}
+
+.spoon-cost,
+.upcoming-row > span,
+.session-row > span {
+  color: var(--color-purple);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.session-row {
+  justify-content: flex-start;
+}
+
+.session-row > span {
+  min-width: 82px;
+}
+
+/* TODAY PLAN */
+
+.today-plan-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.task-check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  flex: 1;
+}
+
+.task-check-row input {
+  margin-top: 0.3rem;
+  accent-color: var(--color-purple);
+}
+
+.task-row-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.task-filter-bar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 0.85rem;
+  padding: 0.75rem;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-soft);
+  background: #fffaf7;
+}
+
+.task-filter-bar label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.task-filter-bar span {
+  color: var(--color-deep-purple);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.task-filter-bar select {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--color-text);
+  padding: 0.45rem 0.55rem;
+}
+
+.task-filter-bar select:focus {
+  outline: 3px solid rgba(195, 167, 238, 0.35);
+}
+
+/* QUICK CAPTURE */
+.captured-list {
+  max-height: 185px;
+  overflow-y: auto;
+  padding-right: 0.35rem;
+}
+
+.captured-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.captured-list::-webkit-scrollbar-thumb {
+  background: rgba(111, 79, 156, 0.35);
+  border-radius: 999px;
+}
+
+.quick-capture-input {
+  width: 100%;
+  min-height: 130px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  resize: vertical;
+  background: #fffaf7;
+}
+.capture-footer {
+  margin-top: auto;
+}
+
+.capture-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+/* CAPTURED ITEMS */
+
+.captured-actions,
+.manual-work-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.captured-item p {
+  margin: 0;
+  color: var(--color-text);
+}
+
+.captured-item span {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--color-soft-muted);
+  font-size: 0.8rem;
+}
+
+.captured-item-actions,
+.completed-task-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  align-items: flex-end;
+  white-space: nowrap;
+}
+
+/* COMPLETED TASKS */
+
+.completed-task-item p {
+  margin: 0;
+  color: var(--color-text);
+  text-decoration: line-through;
+}
+
+.completed-task-item span {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--color-soft-muted);
+  font-size: 0.8rem;
+}
+
+/* LOW ENERGY */
+
+.tiny-task-list {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--color-soft-muted);
+}
+
+/* WORKING SESSIONS */
+
+.working-session-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 0.85rem;
+}
+
+.working-session-summary div {
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-soft);
+  background: #fffaf7;
+  padding: 0.75rem;
+}
+
+.working-session-summary strong {
+  display: block;
+  color: var(--color-purple);
+  font-size: 1.25rem;
+}
+
+.working-session-summary span {
+  display: block;
+  color: var(--color-soft-muted);
+  font-size: 0.85rem;
+}
+
+/* MANUAL COMPLETED WORK */
+
+.manual-work-item p {
+  margin: 0.25rem 0 0;
+}
+
+.manual-work-footer {
+  margin-top: 0.75rem;
+  border-top: 1px solid rgba(209, 191, 163, 0.75);
+  padding-top: 0.65rem;
+}
+
+/* TASK MODAL + WORK LOG MODAL FORMS */
+
+.task-form,
+.work-log-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.task-form label,
+.work-log-form label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.task-form label span,
+.work-log-form label span {
+  color: var(--color-deep-purple);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.task-form input,
+.task-form select,
+.work-log-form input,
+.work-log-form select,
+.work-log-form textarea {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--color-text);
+  padding: 0.65rem 0.75rem;
+}
+
+.task-form input:focus,
+.task-form select:focus,
+.work-log-form input:focus,
+.work-log-form select:focus,
+.work-log-form textarea:focus {
+  outline: 3px solid rgba(195, 167, 238, 0.35);
+}
+
+.work-log-form textarea {
+  resize: vertical;
+}
+
+.work-log-modal-card {
+  width: min(720px, 100%);
+}
+
+.work-log-checkbox-row {
+  display: flex !important;
+  align-items: center;
+  gap: 0.5rem !important;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-soft);
+  background: #ffffff;
+  padding: 0.75rem;
+}
+
+.work-log-checkbox-row input {
+  width: auto;
+}
+
+/* DAILY CHECK-IN */
+
+.daily-check-in-summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.daily-check-in-summary-line {
+  margin: 0;
+  color: var(--color-deep-purple);
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+/*
+.daily-check-in-modal-card {
+  width: min(760px, 100%);
+  max-height: min(88vh, 820px);
+  overflow-y: auto;
+}
+*/
+
+.daily-check-in-form,
+.daily-check-in-blocks,
+.daily-check-in-block-list,
+.daily-check-in-notes {
+  display: grid;
+  gap: 1rem;
+}
+
+.daily-check-in-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.daily-check-in-form label,
+.daily-check-in-block-row label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.daily-check-in-form label span,
+.daily-check-in-block-row label span {
+  color: var(--color-deep-purple);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.daily-check-in-form input,
+.daily-check-in-form select,
+.daily-check-in-form textarea {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--color-text);
+  padding: 0.65rem 0.75rem;
+}
+
+.daily-check-in-form textarea {
+  resize: vertical;
+}
+
+.daily-check-in-blocks {
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-soft);
+  background: rgba(255, 250, 247, 0.58);
+  padding: 0.85rem;
+}
+
+.daily-check-in-block-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 0.8fr)) minmax(0, 1.4fr) auto;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.daily-check-in-toggle-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.daily-check-in-notes {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* TODAY BUILDER */
+
+.today-builder-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.today-builder-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.today-builder-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.today-builder-metrics span {
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: #fffaf7;
+  color: var(--color-deep-purple);
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 0.35rem 0.55rem;
+}
+
+.today-builder-warnings {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.today-builder-warning {
+  margin: 0;
+  border: 1px dashed var(--color-border);
+  border-radius: 10px;
+  background: #fffdf9;
+  color: var(--color-text);
+  font-size: 0.88rem;
+  line-height: 1.35;
+  padding: 0.55rem 0.65rem;
+}
+
+.today-builder-warning--strong {
+  border-color: rgba(180, 35, 24, 0.32);
+  background: rgba(255, 241, 238, 0.72);
+}
+
+.today-builder-warning--warning {
+  border-color: rgba(181, 119, 0, 0.32);
+  background: rgba(255, 249, 229, 0.72);
+}
+
+.today-builder-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.today-builder-list-section {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.today-builder-list-section h3 {
+  margin: 0;
+  color: var(--color-deep-purple);
+  font-size: 0.95rem;
+}
+
+.today-builder-task-list {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.today-builder-task-row {
+  display: grid;
+  gap: 0.15rem;
+  border: 1px dashed var(--color-border);
+  border-radius: 10px;
+  background: rgba(255, 250, 247, 0.74);
+  padding: 0.55rem 0.65rem;
+}
+
+.today-builder-task-row strong {
+  color: var(--color-text);
+  font-size: 0.9rem;
+}
+
+.today-builder-task-row span {
+  color: var(--color-soft-muted);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.today-builder-plan-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.45rem;
+  align-items: center;
+  margin-top: 0.2rem;
+}
+
+.today-builder-plan-row select {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--color-text);
+  font-size: 0.82rem;
+  padding: 0.45rem 0.5rem;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 760px) {
+  .dashboard-status-strip,
+  .dashboard-support-grid,
+  .task-filter-bar,
+  .daily-check-in-grid,
+  .daily-check-in-toggle-list,
+  .daily-check-in-notes,
+  .today-builder-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .today-builder-plan-row {
+    grid-template-columns: 1fr;
+  }
+
+  .daily-check-in-block-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+@media (max-width: 980px) {
+  .dashboard-support-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-support-grid > .garden-card,
+  .dashboard-support-grid > .hint-card {
+    min-height: auto;
+  }
+}
+
+/* DAILY PLAN MODAL */
+
+.daily-plan-modal-card {
+  width: min(720px, 100%);
+}
+
+.daily-plan-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.daily-plan-form label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.daily-plan-form label span {
+  color: var(--color-deep-purple);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.daily-plan-form textarea,
+.daily-plan-form select {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--color-text);
+  padding: 0.65rem 0.75rem;
+}
+
+.daily-plan-form textarea {
+  resize: vertical;
+}
+
+.daily-plan-form textarea:focus,
+.daily-plan-form select:focus {
+  outline: 3px solid rgba(195, 167, 238, 0.35);
+}
+
+/* DASHBOARD ACTIONS */
+.dashboard-action-grid {
+  flex: 1;
+}
+
+.dashboard-action-tile {
+  min-height: 72px;
+}
+
+.dashboard-action-footer {
+  margin-top: auto;
+}
+
+.dashboard-action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+}
+
+.dashboard-action-tile {
+  display: grid;
+  gap: 0.25rem;
+  text-align: left;
+  text-decoration: none;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-soft);
+  background: #fffaf7;
+  color: var(--color-text);
+  padding: 0.75rem;
+  cursor: pointer;
+}
+
+.dashboard-action-tile:hover {
+  background: #f6edfb;
+  border-color: var(--color-purple);
+}
+
+.dashboard-action-tile strong {
+  color: var(--color-purple);
+}
+
+.dashboard-action-tile span {
+  color: var(--color-soft-muted);
+  font-size: 0.85rem;
+}
+
+.dashboard-action-footer {
+  margin-top: 0.85rem;
+  border-top: 1px solid rgba(209, 191, 163, 0.75);
+  padding-top: 0.75rem;
+}
+
+@media (max-width: 760px) {
+  .dashboard-action-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  #taskHints {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "plan"
+      "week"
+      "low"
+      "sessions";
+  }
+
+  #taskHints .hint-card {
+    height: auto;
+    max-height: 420px;
+  }
+
+  #todayTasksCard .task-list,
+  #weekTasksCard .upcoming-list,
+  #lowEnergyCard .low-energy-list {
+    max-height: 240px;
+  }
+}
+
+/* REAL LOW ENERGY TASKS */
+
+.low-energy-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.low-energy-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-soft);
+  background: var(--color-surface-warm);
+  padding: 0.75rem;
+}
+
+.low-energy-row strong {
+  color: var(--color-text);
+}
+
+.low-energy-row p {
+  margin: 0.25rem 0 0;
+  color: var(--color-soft-muted);
+  font-size: 0.85rem;
+}
+
+.low-energy-row .pill,
+.low-energy-row .text-button {
+  flex-shrink: 0;
+}
+
+/* UPCOMING TASK SPLIT */
+
+.upcoming-split-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  overflow-y: auto;
+  padding-right: 0.35rem;
+}
+
+.upcoming-section {
+  min-width: 0;
+}
+
+.upcoming-section h3 {
+  margin: 0 0 0.45rem;
+  color: var(--color-purple);
+  font-size: 0.9rem;
+}
+
+.overdue-section {
+  grid-column: 1 / -1;
+  border: 1px dashed rgba(180, 35, 24, 0.35);
+  border-radius: var(--radius-soft);
+  padding: 0.5rem;
+  background: rgba(255, 245, 245, 0.75);
+}
+
+#weekTasksCard .upcoming-split-list {
+  max-height: 245px;
+}
+
+#weekTasksCard .upcoming-list {
+  max-height: none;
+}
+
+/* LOW ENERGY SUGGESTIONS */
+
+.low-energy-list-compact {
+  max-height: none;
+}
+
+.low-energy-note {
+  margin-top: auto;
+  border-top: 1px solid rgba(209, 191, 163, 0.75);
+  padding-top: 0.65rem;
+}
+
+@media (max-width: 760px) {
+  .upcoming-split-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* RAINBOW SPOON TRACKER */
+
+.energy-tracker-card {
+  max-width: 1180px;
+  margin: 0 auto 1rem;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.95), transparent 34%),
+    linear-gradient(135deg, rgba(255, 250, 247, 0.98), rgba(246, 237, 251, 0.95));
+}
+
+.energy-tracker-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.energy-tracker-header h2 {
+  margin: 0;
+}
+
+.energy-tracker-count {
+  display: flex;
+  align-items: baseline;
+  gap: 0.15rem;
+  color: var(--color-deep-purple);
+}
+
+.energy-tracker-count strong {
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1;
+}
+
+.energy-tracker-count span {
+  color: var(--color-soft-muted);
+  font-weight: 800;
+}
+
+.rainbow-spoon-meter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+
+.rainbow-spoon {
+  --spoon-color: var(--color-purple);
+  --spoon-bg: rgba(111, 79, 156, 0.12);
+
+  width: 2.45rem;
+  height: 2.45rem;
+  border: 1px solid rgba(31, 41, 51, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  opacity: 0.42;
+  transform: translateY(0);
+  transition:
+    transform 140ms ease,
+    opacity 140ms ease,
+    background 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.rainbow-spoon span {
+  font-size: 1.25rem;
+}
+
+.rainbow-spoon:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.rainbow-spoon.is-active {
+  opacity: 1;
+  background: var(--spoon-bg);
+  border-color: var(--spoon-color);
+  box-shadow: 0 8px 18px rgba(31, 41, 51, 0.1);
+}
+
+.rainbow-spoon.is-active span {
+  filter: saturate(1.2);
+}
+
+.spoon-red {
+  --spoon-color: #ef4444;
+  --spoon-bg: rgba(239, 68, 68, 0.16);
+}
+
+.spoon-orange {
+  --spoon-color: #f97316;
+  --spoon-bg: rgba(249, 115, 22, 0.16);
+}
+
+.spoon-yellow {
+  --spoon-color: #eab308;
+  --spoon-bg: rgba(234, 179, 8, 0.2);
+}
+
+.spoon-green {
+  --spoon-color: #22c55e;
+  --spoon-bg: rgba(34, 197, 94, 0.16);
+}
+
+.spoon-blue {
+  --spoon-color: #3b82f6;
+  --spoon-bg: rgba(59, 130, 246, 0.16);
+}
+
+.spoon-indigo {
+  --spoon-color: #6366f1;
+  --spoon-bg: rgba(99, 102, 241, 0.16);
+}
+
+.spoon-violet {
+  --spoon-color: #a855f7;
+  --spoon-bg: rgba(168, 85, 247, 0.16);
+}
+
+.energy-tracker-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+  border-top: 1px solid rgba(209, 191, 163, 0.75);
+  padding-top: 0.75rem;
+}
+
+.energy-tracker-footer span {
+  color: var(--color-deep-purple);
+  font-weight: 900;
+}
+
+.energy-tracker-footer small {
+  color: var(--color-soft-muted);
+  font-weight: 700;
+}
+
+/* LIGHT DASHBOARD POLISH */
+
+#todayTasksCard,
+#weekTasksCard,
+#lowEnergyCard,
+#workingSessionsCard {
+  position: relative;
+  border-top-width: 5px;
+}
+
+#todayTasksCard {
+  border-top-color: rgba(168, 85, 247, 0.65);
+  background:
+    radial-gradient(circle at top left, rgba(168, 85, 247, 0.08), transparent 38%),
+    var(--color-card);
+}
+
+#weekTasksCard {
+  border-top-color: rgba(59, 130, 246, 0.65);
+  background:
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.08), transparent 38%),
+    var(--color-card);
+}
+
+#lowEnergyCard {
+  border-top-color: rgba(34, 197, 94, 0.65);
+  background:
+    radial-gradient(circle at top left, rgba(34, 197, 94, 0.08), transparent 38%),
+    var(--color-card);
+}
+
+#workingSessionsCard {
+  border-top-color: rgba(249, 115, 22, 0.65);
+  background:
+    radial-gradient(circle at top left, rgba(249, 115, 22, 0.08), transparent 38%),
+    var(--color-card);
+}
+
+.card-heading-row h2 {
+  letter-spacing: -0.02em;
+}
+
+.hint-card .eyebrow {
+  letter-spacing: 0.08em;
+}
+
+.dashboard-support-grid > .garden-card,
+.dashboard-support-grid > .hint-card,
+#taskHints .hint-card {
+  box-shadow: 0 14px 34px rgba(71, 46, 92, 0.08);
+}
+
+/* END OF DAY REVIEW */
+
+.end-of-day-review-card {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.end-of-day-review-modal-card {
+  width: min(920px, 100%);
+  max-height: min(88vh, 980px);
+  overflow: auto;
+}
+
+.end-of-day-review-body {
+  display: grid;
+  gap: 1rem;
+}
+
+.end-of-day-review-section {
+  display: grid;
+  gap: 0.75rem;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-soft);
+  background: #fffaf7;
+  padding: 0.85rem;
+}
+
+.end-of-day-review-section h3 {
+  margin: 0;
+  color: var(--color-deep-purple);
+}
+
+.end-of-day-review-snapshot {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.end-of-day-review-snapshot div,
+.end-of-day-energy-option {
+  display: grid;
+  gap: 0.2rem;
+  border: 1px solid rgba(209, 191, 163, 0.75);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 0.65rem;
+}
+
+.end-of-day-review-snapshot strong {
+  color: var(--color-deep-purple);
+  font-size: 1.2rem;
+}
+
+.end-of-day-review-snapshot span,
+.end-of-day-notes-grid span {
+  color: var(--color-soft-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.end-of-day-task-list {
+  display: grid;
+  gap: 0.45rem;
+  max-height: 210px;
+  overflow: auto;
+}
+
+.end-of-day-task-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid rgba(209, 191, 163, 0.75);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 0.55rem 0.65rem;
+}
+
+.end-of-day-notes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.end-of-day-notes-grid label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.end-of-day-notes-grid textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.end-of-day-energy-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.end-of-day-energy-option {
+  cursor: pointer;
+  place-items: center;
+  color: var(--color-deep-purple);
+  font-weight: 900;
+}
+
+.end-of-day-energy-option input {
+  position: absolute;
+  opacity: 0;
+}
+
+.end-of-day-energy-option.selected {
+  border-color: var(--color-purple);
+  background: rgba(195, 167, 238, 0.18);
+}
+
+@media (max-width: 760px) {
+  .end-of-day-review-snapshot,
+  .end-of-day-notes-grid,
+  .end-of-day-energy-row {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-page .text-button,
+  .modal-card .text-button {
+    min-height: 36px;
+    padding-block: 0.35rem;
+  }
+}
+
+/* ACCESSIBLE CALM FOCUS */
+
+.dashboard-page button:focus-visible,
+.dashboard-page a:focus-visible,
+.dashboard-page select:focus-visible,
+.dashboard-page textarea:focus-visible,
+.dashboard-page input:focus-visible {
+  outline: 3px solid rgba(168, 85, 247, 0.35);
+  outline-offset: 3px;
+}
+
+/* DASHBOARD LAYOUT POLISH PASS */
+
+.dashboard-page {
+  --dashboard-content-max: 1540px;
+  --dashboard-content-width: min(var(--dashboard-content-max), calc(100% - 2rem));
+}
+
+/* Let the main dashboard sections breathe across the page */
+.energy-tracker-card,
+#motivation-banner,
+.dashboard-status-strip,
+#layout,
+.calendar-card,
+.dashboard-lower-layout {
+  width: var(--dashboard-content-width);
+  max-width: var(--dashboard-content-max);
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+
+/* The old #layout was acting like a narrow flex container */
+#layout {
+  display: block;
+  padding: 0;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Top dashboard task cards */
+#taskHints {
+  width: 100%;
+  max-width: none;
+  margin: 1rem 0;
+  align-items: stretch;
+  gap: 1rem;
+}
+
+#taskHints .hint-card {
+  height: auto;
+  max-height: none;
+  overflow: hidden;
+}
+
+/* Give the two main top cards more usable room */
+#todayTasksCard,
+#weekTasksCard {
+  min-height: 430px;
+}
+
+/* Keep the lower top-row cards useful without becoming giant */
+#lowEnergyCard,
+#workingSessionsCard {
+  min-height: 320px;
+}
+
+/* Make the internal lists scroll instead of stretching the whole card */
+#todayTasksCard .task-list {
+  max-height: 235px;
+  overflow-y: auto;
+}
+
+#weekTasksCard .upcoming-split-list {
+  max-height: 290px;
+  overflow-y: auto;
+}
+
+#lowEnergyCard .low-energy-list {
+  max-height: 245px;
+  overflow-y: auto;
+}
+
+#workingSessionsCard .session-list {
+  max-height: 210px;
+  overflow-y: auto;
+}
+
+/* Lower dashboard layout: three independent columns */
+.dashboard-lower-layout {
+  display: grid;
+  grid-template-columns:
+    minmax(280px, 0.9fr)
+    minmax(430px, 1.35fr)
+    minmax(280px, 0.9fr);
+  gap: 1rem;
+  align-items: start;
+  margin-top: 1rem;
+}
+
+/* Each lower column stacks its own cards. This prevents weird equal-height rows. */
+.dashboard-support-column {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+  min-width: 0;
+}
+
+/* Undo old forced minimum height on the lower cards */
+.dashboard-support-column > .garden-card,
+.dashboard-support-column > .hint-card {
+  min-height: auto;
+}
+
+/* Make Today Builder feel like the main planning brain */
+.dashboard-support-column--center .today-builder-card {
+  min-height: 620px;
+}
+
+.today-builder-card {
+  padding: 1rem;
+}
+
+.today-builder-grid {
+  gap: 1rem;
+}
+
+.today-builder-task-list {
+  gap: 0.55rem;
+}
+
+.today-builder-task-row {
+  padding: 0.7rem 0.8rem;
+}
+
+/* Make Quick Capture and Shutdown Review less awkward */
+.quick-capture-input {
+  min-height: 170px;
+}
+
+.end-of-day-review-card {
+  min-height: 260px;
+}
+
+/* Daily Plan modal: wider, easier to type into */
+.daily-plan-modal-card {
+  width: min(960px, calc(100vw - 2rem));
+  max-height: min(90vh, 920px);
+  overflow-y: auto;
+}
+
+.daily-plan-form textarea {
+  min-height: 260px;
+}
+
+
+/* Daily Check-In modal: slightly wider */
+/*
+.daily-check-in-modal-card {
+  width: min(880px, calc(100vw - 2rem));
+}
+*/
+
+/* Shutdown Review modal: wider for real review work */
+.end-of-day-review-modal-card {
+  width: min(1120px, calc(100vw - 2rem));
+}
+
+.end-of-day-task-list {
+  max-height: 300px;
+}
+
+/* Medium screens */
+@media (max-width: 1100px) {
+  #taskHints {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "plan"
+      "week"
+      "low"
+      "sessions";
+  }
+
+  #todayTasksCard,
+  #weekTasksCard,
+  #lowEnergyCard,
+  #workingSessionsCard {
+    min-height: auto;
+  }
+
+  .dashboard-lower-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-support-column--center .today-builder-card {
+    min-height: auto;
+  }
+}
+
+/* Small screens */
+@media (max-width: 760px) {
+  .dashboard-page {
+    --dashboard-content-width: min(100%, calc(100% - 1rem));
+  }
+
+  .energy-tracker-card,
+  #motivation-banner,
+  .dashboard-status-strip,
+  #layout,
+  .calendar-card,
+  .dashboard-lower-layout {
+    width: var(--dashboard-content-width);
+  }
+
+  #todayTasksCard .task-list,
+  #weekTasksCard .upcoming-split-list,
+  #lowEnergyCard .low-energy-list,
+  #workingSessionsCard .session-list {
+    max-height: 260px;
+  }
+
+  .daily-plan-modal-card,
+  .daily-check-in-modal-card,
+  .end-of-day-review-modal-card {
+    width: calc(100vw - 1rem);
+  }
+}
+
+/* DASHBOARD MODAL FIX PASS */
+
+/*
+  These dashboard planning modals are major workspaces.
+  They should sit above the floating timer, use most of the screen,
+  and scroll inside the modal instead of overlapping.
+*/
+
+.dashboard-page > .modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: start center;
+  padding: 4.75rem 1rem 1.25rem;
+  overflow-y: auto;
+  background: rgba(31, 41, 51, 0.42);
+}
+
+/* Shared dashboard modal behavior */
+.dashboard-page .daily-check-in-modal-card,
+.dashboard-page .end-of-day-review-modal-card,
+.dashboard-page .daily-plan-modal-card {
+  box-sizing: border-box;
+  max-height: calc(100vh - 6rem);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1.25rem;
+}
+
+/* Keep modal headers readable, but do NOT let them cover form content */
+.dashboard-page .daily-check-in-modal-card .modal-header,
+.dashboard-page .end-of-day-review-modal-card .modal-header,
+.dashboard-page .daily-plan-modal-card .modal-header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #fffaf7;
+  margin: -1.25rem -1.25rem 1rem;
+  padding: 1.25rem 1.25rem 0.85rem;
+}
+
+/* Keep bottom buttons reachable without swallowing the last form fields */
+.dashboard-page .daily-check-in-modal-card .modal-actions,
+.dashboard-page .end-of-day-review-modal-card .modal-actions,
+.dashboard-page .daily-plan-modal-card .modal-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  background: #fffaf7;
+  margin: 1rem -1.25rem -1.25rem;
+  padding: 0.85rem 1.25rem 1.25rem;
+  border-top: 1px solid rgba(209, 191, 163, 0.75);
+}
+
+/* DAILY CHECK-IN MODAL */
+
+.dashboard-page .daily-check-in-modal-card {
+  width: min(1120px, calc(100vw - 2rem));
+}
+
+.dashboard-page .daily-check-in-form {
+  display: grid;
+  gap: 1rem;
+  padding-bottom: 0.5rem;
+}
+
+.dashboard-page .daily-check-in-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(190px, 1fr));
+  gap: 0.85rem;
+}
+
+/*
+  Works whether your row has:
+  Start / End / Remove
+  OR Start / End / Status / Notes / Remove
+*/
+.dashboard-page .daily-check-in-block-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  gap: 0.85rem;
+  align-items: end;
+}
+
+.dashboard-page .daily-check-in-block-row label {
+  min-width: 0;
+}
+
+.dashboard-page .daily-check-in-block-row input,
+.dashboard-page .daily-check-in-block-row select,
+.dashboard-page .daily-check-in-block-row textarea {
+  min-width: 0;
+}
+
+.dashboard-page .daily-check-in-block-row textarea {
+  min-height: 44px;
+  resize: vertical;
+}
+
+.dashboard-page .daily-check-in-block-row .text-button {
+  justify-self: start;
+  min-height: 42px;
+  white-space: nowrap;
+}
+
+.dashboard-page .daily-check-in-toggle-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(240px, 1fr));
+  gap: 0.85rem;
+}
+
+.dashboard-page .daily-check-in-toggle-list .work-log-checkbox-row {
+  min-width: 0;
+  align-items: center;
+}
+
+.dashboard-page .daily-check-in-notes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: 0.85rem;
+}
+
+.dashboard-page .daily-check-in-notes textarea {
+  min-height: 130px;
+}
+
+/* SHUTDOWN REVIEW MODAL */
+
+.dashboard-page .end-of-day-review-modal-card {
+  width: min(1240px, calc(100vw - 2rem));
+}
+
+.dashboard-page .end-of-day-review-body {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+/* First section is Today Snapshot */
+.dashboard-page .end-of-day-review-section:first-child {
+  grid-column: 1 / -1;
+}
+
+/* The reality-notes section should get the full width */
+.dashboard-page .end-of-day-review-section:has(.end-of-day-notes-grid) {
+  grid-column: 1 / -1;
+}
+
+/* Energy row should also get the full width */
+.dashboard-page .end-of-day-review-section:has(.end-of-day-energy-row) {
+  grid-column: 1 / -1;
+}
+
+.dashboard-page .end-of-day-review-snapshot {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  gap: 0.75rem;
+}
+
+.dashboard-page .end-of-day-task-list {
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.dashboard-page .end-of-day-task-row {
+  min-width: 0;
+}
+
+.dashboard-page .end-of-day-task-row span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-page .end-of-day-notes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: 0.85rem;
+}
+
+.dashboard-page .end-of-day-notes-grid textarea {
+  min-height: 125px;
+}
+
+.dashboard-page .end-of-day-energy-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(90px, 1fr));
+  gap: 0.65rem;
+}
+
+/* DAILY PLAN MODAL */
+
+.dashboard-page .daily-plan-modal-card {
+  width: min(960px, calc(100vw - 2rem));
+}
+
+.dashboard-page .daily-plan-form textarea {
+  min-height: 260px;
+}
+
+/* Medium screens */
+@media (max-width: 980px) {
+  .dashboard-page > .modal-backdrop {
+    padding: 4rem 0.75rem 1rem;
+  }
+
+  .dashboard-page .daily-check-in-modal-card,
+  .dashboard-page .end-of-day-review-modal-card,
+  .dashboard-page .daily-plan-modal-card {
+    width: calc(100vw - 1.5rem);
+    max-height: calc(100vh - 5rem);
+  }
+
+  .dashboard-page .daily-check-in-grid,
+  .dashboard-page .daily-check-in-toggle-list,
+  .dashboard-page .daily-check-in-notes,
+  .dashboard-page .end-of-day-review-body,
+  .dashboard-page .end-of-day-review-snapshot,
+  .dashboard-page .end-of-day-notes-grid,
+  .dashboard-page .end-of-day-energy-row {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-page .daily-check-in-block-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Small screens */
+@media (max-width: 640px) {
+  .dashboard-page > .modal-backdrop {
+    place-items: start stretch;
+    padding: 3.5rem 0.5rem 0.75rem;
+  }
+
+  .dashboard-page .daily-check-in-modal-card,
+  .dashboard-page .end-of-day-review-modal-card,
+  .dashboard-page .daily-plan-modal-card {
+    width: 100%;
+    max-height: calc(100vh - 4.25rem);
+    padding: 1rem;
+  }
+
+  .dashboard-page .daily-check-in-modal-card .modal-header,
+  .dashboard-page .end-of-day-review-modal-card .modal-header,
+  .dashboard-page .daily-plan-modal-card .modal-header {
+    margin: -1rem -1rem 1rem;
+    padding: 1rem 1rem 0.75rem;
+  }
+
+  .dashboard-page .daily-check-in-modal-card .modal-actions,
+  .dashboard-page .end-of-day-review-modal-card .modal-actions,
+  .dashboard-page .daily-plan-modal-card .modal-actions {
+    margin: 1rem -1rem -1rem;
+    padding: 0.75rem 1rem 1rem;
+  }
+}

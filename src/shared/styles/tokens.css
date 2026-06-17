@@ -1,25 +1,28 @@
 :root {
   --color-bg: #f7f2eb;
-  --color-surface: #fffaf5;
-  --color-surface-strong: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-warm: #fffaf7;
 
-  --color-lavender: #e8ddf5;
-  --color-lavender-strong: #c8a7ee;
-  --color-purple: #6f4f9c;
-  --color-deep-purple: #4d3575;
+  --color-header-lavender: #e6dbf2;
+  --color-purple: #7a4c82;
+  --color-deep-purple: #5e3f92;
+  --color-service-accent: #c3a7ee;
 
-  --color-pink: #f7b7d2;
-  --color-coral: #ff8f70;
-  --color-mint: #bfe8d4;
-  --color-sky: #b8ddf2;
+  --color-text: #1f2933;
+  --color-muted: #475569;
+  --color-soft-muted: #555555;
+  --color-link: #1d4ed8;
+  --color-border: #d1bfa3;
+  --color-card-border: #cccccc;
 
-  --color-text: #2f2437;
-  --color-muted: #776a7f;
-  --color-border: #dbcdbf;
+  --color-research-soft: #f9f4dc;
+  --color-teaching-soft: #fff9ef;
+  --color-service-soft: #f6f2ff;
 
-  --radius-card: 24px;
-  --radius-button: 999px;
+  --radius-card: 8px;
+  --radius-soft: 10px;
+  --radius-pill: 999px;
 
-  --shadow-card: 0 18px 35px rgba(64, 44, 84, 0.14);
-  --shadow-soft: 0 10px 20px rgba(64, 44, 84, 0.1);
+  --shadow-card: 1px 1px 4px rgba(0, 0, 0, 0.05);
+  --shadow-header: 0 2px 6px rgba(0, 0, 0, 0.1);
 }

@@ -1,0 +1,68 @@
+.auth-page {
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+.auth-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.auth-status-box,
+.auth-user-panel {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  border: 1px solid rgba(209, 191, 163, 0.75);
+  border-radius: 12px;
+  background: rgba(255, 250, 245, 0.78);
+  padding: 0.85rem;
+}
+
+.auth-status-box p,
+.auth-user-panel h3,
+.auth-user-panel p {
+  margin: 0;
+}
+
+.auth-status-box svg {
+  color: var(--color-deep-purple);
+  flex: 0 0 auto;
+}
+
+.auth-user-panel {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.auth-user-panel h3 {
+  color: var(--color-deep-purple);
+}
+
+.auth-actions,
+.auth-user-panel .button,
+.app-account-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.auth-actions .button,
+.auth-user-panel .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+}
+
+@media (max-width: 640px) {
+  .auth-status-box {
+    align-items: flex-start;
+  }
+
+  .auth-actions .button,
+  .auth-user-panel .button {
+    width: 100%;
+  }
+}

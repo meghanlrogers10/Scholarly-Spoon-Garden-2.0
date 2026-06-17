@@ -1,0 +1,421 @@
+.mindspace-page {
+  --mindspace-blue: #dff0ff;
+  --mindspace-green: #dff4e8;
+  --mindspace-gold: #fff0c7;
+  --mindspace-pink: #ffe0ec;
+}
+
+.mindspace-hero {
+  background:
+    radial-gradient(circle at top right, rgba(184, 221, 242, 0.55), transparent 28rem),
+    linear-gradient(135deg, rgba(232, 221, 245, 0.95), rgba(255, 250, 245, 0.92));
+}
+
+.mindspace-overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 0.8fr);
+  gap: 1rem;
+}
+
+.mindspace-capture-card,
+.mindspace-checkin-card,
+.mindspace-tool-card,
+.mindspace-item-card,
+.goal-ladder-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.mindspace-section-heading h2,
+.mindspace-tool-card h2,
+.mindspace-item-card h3,
+.goal-ladder-card h3 {
+  margin: 0.25rem 0 0.35rem;
+  color: var(--color-deep-purple);
+}
+
+.mindspace-textarea {
+  width: 100%;
+  min-height: 150px;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(219, 205, 191, 0.95);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.74);
+  color: var(--color-text);
+  resize: vertical;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.mindspace-textarea:focus {
+  outline: 3px solid rgba(200, 167, 238, 0.35);
+  border-color: var(--color-lavender-strong);
+}
+
+.mindspace-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+
+.mindspace-stat-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.mindspace-stat-list div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 18px;
+  background: rgba(232, 221, 245, 0.48);
+}
+
+.mindspace-stat-list strong {
+  color: var(--color-deep-purple);
+  font-size: 1.5rem;
+}
+
+.mindspace-stat-list span {
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+.mindspace-tool-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.mindspace-prompt-list {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+
+.mindspace-prompt-list button {
+  width: 100%;
+  border: 1px solid rgba(219, 205, 191, 0.9);
+  border-radius: 999px;
+  padding: 0.7rem 0.9rem;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.mindspace-prompt-list button:hover {
+  background: var(--color-lavender);
+}
+
+.mindspace-decision-card {
+  margin-top: 0.8rem;
+  padding: 0.9rem;
+  border-radius: 18px;
+  background: rgba(255, 240, 199, 0.58);
+  border: 1px solid rgba(219, 205, 191, 0.72);
+}
+
+.mindspace-decision-card strong {
+  color: var(--color-deep-purple);
+}
+
+.mindspace-decision-card p {
+  margin: 0.35rem 0 0;
+  color: var(--color-muted);
+}
+
+.mindspace-ladder-preview {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.35rem;
+  margin: 1rem 0;
+}
+
+.mindspace-ladder-preview span {
+  padding: 0.55rem 0.35rem;
+  border-radius: 999px;
+  background: rgba(223, 240, 255, 0.9);
+  color: var(--color-deep-purple);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.mindspace-two-column {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.1rem;
+  align-items: start;
+}
+
+.mindspace-item-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.mindspace-item-card,
+.goal-ladder-card {
+  border: 1px solid rgba(219, 205, 191, 0.88);
+  border-radius: 24px;
+  padding: 1rem;
+  background: rgba(255, 250, 245, 0.84);
+  box-shadow: var(--shadow-soft);
+}
+
+.mindspace-item-card::before,
+.goal-ladder-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 8px;
+  background: var(--color-lavender-strong);
+}
+
+.mindspace-area-research::before {
+  background: #bfa7ee;
+}
+
+.mindspace-area-teaching::before {
+  background: #ffb49e;
+}
+
+.mindspace-area-service::before {
+  background: #a9dfc3;
+}
+
+.mindspace-area-career::before {
+  background: #b8ddf2;
+}
+
+.mindspace-area-personal::before,
+.mindspace-area-recovery::before {
+  background: #f7b7d2;
+}
+
+.mindspace-area-admin::before {
+  background: #f7d789;
+}
+
+.mindspace-item-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.mindspace-kicker {
+  margin: 0;
+  color: var(--color-purple);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mindspace-status-pill,
+.mindspace-chip,
+.mindspace-load-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.32rem 0.55rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.mindspace-status-pill {
+  background: rgba(232, 221, 245, 0.9);
+  color: var(--color-deep-purple);
+  white-space: nowrap;
+}
+
+.mindspace-next-action {
+  margin-top: 0.8rem;
+  padding: 0.85rem;
+  border-radius: 18px;
+  background: rgba(223, 244, 232, 0.68);
+}
+
+.mindspace-next-action span,
+.goal-ladder-grid span {
+  color: var(--color-purple);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.mindspace-next-action p,
+.goal-ladder-grid p,
+.goal-progress-strip p {
+  margin: 0.25rem 0 0;
+  color: var(--color-text);
+}
+
+.mindspace-parked-note {
+  margin: 0.8rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+.mindspace-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.85rem;
+}
+
+.mindspace-chip {
+  background: rgba(255, 255, 255, 0.74);
+  color: var(--color-muted);
+  border: 1px solid rgba(219, 205, 191, 0.75);
+}
+
+.mindspace-load-chip {
+  background: rgba(255, 224, 236, 0.82);
+  color: var(--color-deep-purple);
+}
+
+.mindspace-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.8rem;
+}
+
+.mindspace-field {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.8rem;
+}
+
+.mindspace-field span,
+.mindspace-checkbox-row span {
+  color: var(--color-deep-purple);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.mindspace-field input,
+.mindspace-field select,
+.mindspace-field textarea {
+  width: 100%;
+  border: 1px solid rgba(219, 205, 191, 0.95);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--color-text);
+  padding: 0.7rem 0.8rem;
+}
+
+.mindspace-field textarea {
+  resize: vertical;
+}
+
+.mindspace-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  align-self: end;
+  border: 1px dashed rgba(219, 205, 191, 0.95);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.65);
+  padding: 0.75rem;
+}
+
+.goal-ladder-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin-top: 0.85rem;
+}
+
+.goal-ladder-grid div,
+.goal-progress-strip,
+.goal-receipts {
+  border-radius: 18px;
+  padding: 0.85rem;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(219, 205, 191, 0.68);
+}
+
+.goal-progress-strip {
+  margin-top: 0.8rem;
+}
+
+.goal-progress-strip strong {
+  color: var(--color-deep-purple);
+}
+
+.goal-progress-strip span {
+  color: var(--color-muted);
+}
+
+.goal-milestone-list {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.8rem;
+}
+
+.goal-milestone {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--color-muted);
+}
+
+.goal-milestone span {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background: rgba(119, 106, 127, 0.24);
+}
+
+.goal-milestone-real-progress span,
+.goal-milestone-done-enough span {
+  background: var(--color-lavender-strong);
+}
+
+.goal-milestone p {
+  margin: 0;
+}
+
+.goal-receipts {
+  margin-top: 0.8rem;
+}
+
+.goal-receipts ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.15rem;
+  color: var(--color-muted);
+}
+
+@media (max-width: 1100px) {
+  .mindspace-overview-grid,
+  .mindspace-tool-grid,
+  .mindspace-two-column {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .mindspace-ladder-preview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .goal-ladder-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mindspace-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mindspace-item-header {
+    display: grid;
+  }
+}

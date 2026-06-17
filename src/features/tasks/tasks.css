@@ -1,0 +1,125 @@
+.tasks-page {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.tasks-back-row {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.tasks-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.tasks-summary-grid h2 {
+  margin: 0.25rem 0;
+  color: var(--color-purple);
+}
+
+.tasks-filter-bar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.tasks-filter-bar label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.tasks-filter-bar span {
+  color: var(--color-deep-purple);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.tasks-filter-bar select {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--color-text);
+  padding: 0.65rem 0.75rem;
+}
+
+.tasks-saved-views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.tasks-saved-views button {
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--color-deep-purple);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 0.45rem 0.7rem;
+}
+
+.tasks-saved-views button.is-active {
+  background: var(--color-soft-lavender);
+  border-color: var(--color-purple);
+  color: var(--color-purple);
+}
+
+.tasks-library-list {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.tasks-library-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-soft);
+  background: var(--color-surface-warm);
+  padding: 0.85rem;
+}
+
+.tasks-library-row strong {
+  color: var(--color-text);
+}
+
+.tasks-library-row p {
+  margin: 0.25rem 0 0;
+  color: var(--color-soft-muted);
+  font-size: 0.88rem;
+}
+
+.tasks-library-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.danger-text-button {
+  color: #b42318;
+}
+
+@media (max-width: 840px) {
+  .tasks-summary-grid,
+  .tasks-filter-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .tasks-library-row {
+    flex-direction: column;
+  }
+
+  .tasks-library-actions {
+    align-items: flex-start;
+  }
+}
