@@ -2,7 +2,6 @@ import { NavLink } from "react-router-dom";
 
 const navItems = [
   { to: "/dashboard", emoji: "🏡", label: "Dashboard" },
-  { to: "/source", emoji: "🧭", label: "Source" },
   { to: "/research", emoji: "📚", label: "Research" },
   { to: "/teaching", emoji: "🎓", label: "Teaching" },
   { to: "/service", emoji: "🌱", label: "Service" },
