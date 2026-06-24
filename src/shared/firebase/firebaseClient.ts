@@ -1,6 +1,12 @@
 import { getApps, initializeApp, type FirebaseApp, type FirebaseOptions } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
-import { getFirestore, type Firestore } from "firebase/firestore";
+import {
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  type Firestore,
+} from "firebase/firestore";
 
 type FirebaseEnvKey =
   | "VITE_FIREBASE_API_KEY"
@@ -43,4 +49,24 @@ export const firebaseApp: FirebaseApp | null = firebaseConfig
   : null;
 
 export const auth: Auth | null = firebaseApp ? getAuth(firebaseApp) : null;
-export const db: Firestore | null = firebaseApp ? getFirestore(firebaseApp) : null;
+
+export let firestoreLocalCacheError = "";
+
+function createFirestore(app: FirebaseApp) {
+  try {
+    return initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    });
+  } catch (error) {
+    firestoreLocalCacheError =
+      error instanceof Error
+        ? error.message
+        : "Firestore local cache could not be enabled.";
+
+    return getFirestore(app);
+  }
+}
+
+export const db: Firestore | null = firebaseApp ? createFirestore(firebaseApp) : null;

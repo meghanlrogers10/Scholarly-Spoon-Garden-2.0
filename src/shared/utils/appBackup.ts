@@ -61,6 +61,7 @@ import {
   LAST_CLOUD_SAVE_ERROR_KEY,
   LAST_CLOUD_SAVE_SYNC_AT_KEY,
 } from "../firebase/cloudSaveMetadata";
+import { CLOUD_SAVE_QUEUE_KEY } from "../sync/syncQueue";
 import {
   LAST_SERVICE_SYNC_AT_KEY,
   LAST_SERVICE_SYNC_ERROR_KEY,
@@ -159,6 +160,10 @@ export const APP_STORAGE_KEYS: AppStorageKeyDefinition[] = [
   { key: LAST_CLOUD_SAVE_ERROR_KEY, category: "settings", label: "Last Cloud Save error" },
   { key: CLOUD_SAVE_USER_ID_KEY, category: "settings", label: "Cloud Save user id" },
   { key: CLOUD_SAVE_LAST_AREA_STATUS_KEY, category: "settings", label: "Cloud Save area status" },
+  { key: "ssg2.cloudSaveRuntimeStatus", category: "settings", label: "Cloud Save status" },
+  { key: CLOUD_SAVE_QUEUE_KEY, category: "settings", label: "Cloud Save retry queue" },
+  { key: "ssg2.localBackupSnapshot", category: "settings", label: "Local backup snapshot" },
+  { key: "ssg2.localBackupSnapshotHistory", category: "settings", label: "Local backup history" },
   { key: SETTINGS_SYNC_ENABLED_KEY, category: "settings", label: "Settings sync enabled" },
   { key: LAST_SETTINGS_SYNC_AT_KEY, category: "settings", label: "Last settings sync time" },
   { key: LAST_SETTINGS_SYNC_ERROR_KEY, category: "settings", label: "Last settings sync error" },

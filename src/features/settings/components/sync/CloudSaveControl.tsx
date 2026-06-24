@@ -168,8 +168,11 @@ import {
   LAST_TIMER_SYNC_ERROR_KEY,
   TIMER_CLOUD_USER_ID_KEY,
 } from "../../../../shared/firebase/timerSyncMetadata";
+import { firestoreLocalCacheError } from "../../../../shared/firebase/firebaseClient";
 import { useLocalStorage } from "../../../../shared/hooks/useLocalStorage";
 import { useTaskBridge } from "../../../../shared/hooks/useTaskBridge";
+import { runCloudSave } from "../../../../shared/sync/cloudSaveManager";
+import { useCloudSaveStatus } from "../../../../shared/sync/useCloudSaveStatus";
 import { defaultAppSettings, type AppSettings } from "../../../../shared/types/settings";
 import type { TimerSession } from "../../../../shared/types/timer";
 import type { ManualWorkLogEntry } from "../../../../shared/types/workLog";
@@ -244,6 +247,7 @@ export function CloudSaveControl({
   onExportBackup,
 }: SyncPanelProps) {
   const { tasks, setTasks } = useTaskBridge();
+  const { status: automaticStatus, queue } = useCloudSaveStatus();
   const [cloudSaveEnabled, setCloudSaveEnabled] = useLocalStorage<boolean>(
     CLOUD_SAVE_ENABLED_KEY,
     false,
@@ -458,6 +462,9 @@ export function CloudSaveControl({
 
   const shouldOfferSync =
     cloudSaveEnabled && Boolean(user) && isSyncStale(lastCloudSaveSyncAt);
+  const pendingQueueCount = queue.filter(
+    (item) => item.status === "pending" || item.status === "failed",
+  ).length;
 
   function recordAreaSuccess(area: CloudSaveArea, message: string) {
     const now = new Date().toISOString();
@@ -735,6 +742,14 @@ export function CloudSaveControl({
     return syncResearch(uid);
   }
 
+  void CLOUD_SAVE_ORDER;
+  void getErrorMessage;
+  void recordAreaSuccess;
+  void recordAreaError;
+  void recordDomainSyncSuccess;
+  void recordDomainSyncError;
+  void runArea;
+
   async function handleSyncAllEnabledAreas() {
     if (!user || !isConfigured || !cloudSaveEnabled || syncing) {
       return;
@@ -751,31 +766,13 @@ export function CloudSaveControl({
     setSyncing(true);
     setLastResults([]);
 
-    const results: CloudSaveAreaResult[] = [];
-
-    for (const item of CLOUD_SAVE_ORDER) {
-      try {
-        const message = await runArea(item.area, user.uid);
-        recordDomainSyncSuccess(item.area);
-        recordAreaSuccess(item.area, message);
-        results.push({ area: item.area, label: item.label, ok: true, message });
-      } catch (error) {
-        const message = getErrorMessage(
-          error,
-          `${item.label} sync did not complete.`,
-        );
-
-        recordDomainSyncError(item.area, message);
-        recordAreaError(item.area, message);
-        results.push({ area: item.area, label: item.label, ok: false, message });
-      }
-    }
-
-    const failedCount = results.filter((result) => !result.ok).length;
-    const now = new Date().toISOString();
+    const { results, failedCount, syncedAt } = await runCloudSave({
+      uid: user.uid,
+      manual: true,
+    });
 
     setLastResults(results);
-    setLastCloudSaveSyncAt(now);
+    setLastCloudSaveSyncAt(syncedAt);
     setCloudSaveUserId(user.uid);
 
     if (failedCount > 0) {
@@ -822,6 +819,7 @@ export function CloudSaveControl({
       <div className="settings-backup-summary">
         <span>{user ? `Signed in as ${user.email ?? "this account"}` : "Signed out"}</span>
         <span>{isConfigured ? "Firebase configured" : "Local-only mode"}</span>
+        <span>{automaticStatus.online ? "Online" : "Offline"}</span>
         <span>
           {lastCloudSaveSyncAt
             ? `Last Cloud Save ${formatTaskSyncDate(lastCloudSaveSyncAt)}`
@@ -868,6 +866,13 @@ export function CloudSaveControl({
         </p>
       ) : null}
 
+      {firestoreLocalCacheError ? (
+        <p className="settings-backup-status is-warning">
+          Firestore local cache was not available in this browser session. The
+          app is still keeping its own local backup and retry queue.
+        </p>
+      ) : null}
+
       {shouldOfferSync ? (
         <p className="settings-backup-status is-warning">
           Cloud Save is on. Use Sync now when you want to merge local and cloud
@@ -895,6 +900,12 @@ export function CloudSaveControl({
       </div>
 
       <p className="settings-backup-status is-neutral">{cloudSaveStatusLine}</p>
+
+      <p className={`settings-backup-status is-${automaticStatus.tone}`}>
+        {pendingQueueCount > 0
+          ? `Pending sync: ${pendingQueueCount} area(s) waiting. ${automaticStatus.message}`
+          : automaticStatus.message}
+      </p>
 
       <p className={`settings-backup-status is-${cloudSaveStatus.tone}`}>
         {cloudSaveStatus.message}

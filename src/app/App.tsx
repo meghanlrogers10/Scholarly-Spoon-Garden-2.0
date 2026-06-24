@@ -41,6 +41,7 @@ import { TeachingAnnouncementsPage } from "../features/teaching/pages/TeachingAn
 import { OfficeHoursPage } from "../features/teaching/pages/OfficeHoursPage";
 import { CourseNotesPage } from "../features/teaching/pages/CourseNotesPage";
 import { TeachingResourcesPage } from "../features/teaching/pages/TeachingResourcesPage";
+import { CloudSaveAgent } from "../shared/sync/CloudSaveAgent";
 
 function AuthLoadingScreen() {
   return (
@@ -94,6 +95,7 @@ function ProtectedLayout() {
 
   return (
     <AppShell>
+      <CloudSaveAgent />
       <Outlet />
     </AppShell>
   );
