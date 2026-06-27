@@ -28,6 +28,7 @@ import { ManualWorkLogModal } from "./components/ManualWorkLogModal";
 import { MotivationBanner } from "./components/MotivationBanner";
 import { QuickCaptureCard } from "./components/QuickCaptureCard";
 import { TaskEditorModal } from "./components/TaskEditorModal";
+import { TodaysWorkBlocksCard } from "./components/TodaysWorkBlocksCard";
 import { TodayBuilderCard } from "./components/TodayBuilderCard";
 import { TodayPlanCard } from "./components/TodayPlanCard";
 import { UpcomingTasksCard } from "./components/UpcomingTasksCard";
@@ -496,6 +497,10 @@ export function DashboardPage() {
     }
   }
 
+  function handleRemovePlannedTaskBlockById(plannedBlockId: string) {
+    removePlannedTaskBlock(plannedBlockId);
+  }
+
   function handleMarkCalendarTaskDone(item: CalendarItem) {
     if (item.taskId) {
       markTaskDone(item.taskId);
@@ -542,29 +547,78 @@ export function DashboardPage() {
       <DashboardStatusStrip />
 
       <main id="main-container">
-        <div id="layout">
-          <div id="taskHints">
-            <TodayPlanCard
-              tasks={todayTasks}
-              onToggleDone={toggleTaskDone}
-              onAddTask={openAddTaskModal}
-              onEditTask={openEditTaskModal}
-              onOpenDailyPlan={() => setIsDailyPlanOpen(true)}
-            />
+        <div className="dashboard-command-grid">
+          <DailyCheckInSummaryCard
+            checkIn={todayCheckIn}
+            plannedBlocks={todayPlannedBlocks}
+            timerSessions={timerSessions}
+            manualWorkLogs={manualWorkLogs}
+            onEdit={() => setIsDailyCheckInOpen(true)}
+          />
 
-            <UpcomingTasksCard tasks={allTasks} />
+          <DashboardActionsCard
+            todayTaskCount={todayTasks.length}
+            completedTaskCount={completedTasks.length}
+            timerSessionCount={timerSessions.length}
+            manualWorkLogCount={manualWorkLogs.length}
+            clarifyLaterCount={clarifyLaterCount}
+            avoidanceRadarCount={avoidanceRadarCount}
+            onLogWork={() => setIsManualWorkLogOpen(true)}
+          />
 
-            <LowEnergyTasksCard
-              tasks={allTasks}
-              onAddToToday={addTaskToToday}
-            />
+          <Card className="end-of-day-review-card">
+            <div className="card-heading-row">
+              <div>
+                <p className="eyebrow">Shutdown review</p>
+                <h2>{todayReview ? "Review complete" : "End the day gently"}</h2>
+              </div>
+              <span className="pill">{todayReview ? "saved" : "open"}</span>
+            </div>
 
-            <WorkingSessionsCard
-              sessions={timerSessions}
-              manualWorkLogs={manualWorkLogs}
-            />
-          </div>
+            <p className="muted-text">
+              This is a map, not a moral judgment. Capture what rolls forward
+              and what tomorrow should protect.
+            </p>
+
+            {todayReview?.protectedTomorrow ? (
+              <p className="muted-text">
+                <strong>Tomorrow protects:</strong>{" "}
+                {todayReview.protectedTomorrow}
+              </p>
+            ) : null}
+
+            <Button type="button" onClick={() => setIsEndOfDayReviewOpen(true)}>
+              {todayReview ? "Edit Shutdown Review" : "Shutdown Review"}
+            </Button>
+          </Card>
         </div>
+
+        <TodaysWorkBlocksCard
+          checkIn={todayCheckIn}
+          tasks={allTasks}
+          plannedBlocks={todayPlannedBlocks}
+          timerSessions={timerSessions}
+          manualWorkLogs={manualWorkLogs}
+          onStartCheckIn={() => setIsDailyCheckInOpen(true)}
+          onPlanTaskInBlock={handlePlanTaskInBlock}
+          onRemovePlannedTaskBlock={handleRemovePlannedTaskBlockById}
+          onMarkTaskDone={markTaskDone}
+          onEditTask={openEditTaskModal}
+          onLogWork={() => setIsManualWorkLogOpen(true)}
+        />
+
+        <TodayBuilderCard
+          tasks={allTasks}
+          checkIn={todayCheckIn}
+          plannedBlocks={todayPlannedBlocks}
+          defaultPlanningMode={settings.defaultPlanningMode}
+          lowEnergyModeDefault={settings.lowEnergyModeDefault}
+          maxDailySpoonsWarning={settings.maxDailySpoonsWarning}
+          maxDailyTaskWarning={settings.maxDailyTaskWarning}
+          realisticPlanWarnings={settings.realisticPlanWarnings}
+          onUsePlan={handleUseTodayBuilderPlan}
+          onPlanTaskInBlock={handlePlanTaskInBlock}
+        />
 
         <CalendarCard
           items={dashboardCalendarItems}
@@ -578,78 +632,35 @@ export function DashboardPage() {
           onEditWorkingBlocks={() => setIsDailyCheckInOpen(true)}
         />
 
-        <div className="dashboard-support-grid dashboard-lower-layout">
-          <div className="dashboard-support-column dashboard-support-column--left">
-            <DailyCheckInSummaryCard
-              checkIn={todayCheckIn}
-              plannedBlocks={todayPlannedBlocks}
-              timerSessions={timerSessions}
-              manualWorkLogs={manualWorkLogs}
-              onEdit={() => setIsDailyCheckInOpen(true)}
-            />
+        <div id="taskHints" className="dashboard-lower-support-grid">
+          <TodayPlanCard
+            tasks={todayTasks}
+            onToggleDone={toggleTaskDone}
+            onAddTask={openAddTaskModal}
+            onEditTask={openEditTaskModal}
+            onOpenDailyPlan={() => setIsDailyPlanOpen(true)}
+          />
 
-            <CapturedItemsCard
-              items={capturedItems}
-              onDelete={deleteCapture}
-              onClearAll={clearCaptures}
-              onCreateTask={(item) => createTaskFromCapture(item, deleteCapture)}
-            />
-          </div>
+          <UpcomingTasksCard tasks={allTasks} />
 
-          <div className="dashboard-support-column dashboard-support-column--center">
-            <TodayBuilderCard
-              tasks={allTasks}
-              checkIn={todayCheckIn}
-              plannedBlocks={todayPlannedBlocks}
-              defaultPlanningMode={settings.defaultPlanningMode}
-              lowEnergyModeDefault={settings.lowEnergyModeDefault}
-              maxDailySpoonsWarning={settings.maxDailySpoonsWarning}
-              maxDailyTaskWarning={settings.maxDailyTaskWarning}
-              realisticPlanWarnings={settings.realisticPlanWarnings}
-              onUsePlan={handleUseTodayBuilderPlan}
-              onPlanTaskInBlock={handlePlanTaskInBlock}
-            />
+          <LowEnergyTasksCard
+            tasks={allTasks}
+            onAddToToday={addTaskToToday}
+          />
 
-            <DashboardActionsCard
-              todayTaskCount={todayTasks.length}
-              completedTaskCount={completedTasks.length}
-              timerSessionCount={timerSessions.length}
-              manualWorkLogCount={manualWorkLogs.length}
-              clarifyLaterCount={clarifyLaterCount}
-              avoidanceRadarCount={avoidanceRadarCount}
-              onLogWork={() => setIsManualWorkLogOpen(true)}
-            />
-          </div>
+          <WorkingSessionsCard
+            sessions={timerSessions}
+            manualWorkLogs={manualWorkLogs}
+          />
 
-          <div className="dashboard-support-column dashboard-support-column--right">
-            <QuickCaptureCard onSave={saveCapture} />
+          <QuickCaptureCard onSave={saveCapture} />
 
-            <Card className="end-of-day-review-card">
-              <div className="card-heading-row">
-                <div>
-                  <p className="eyebrow">Shutdown review</p>
-                  <h2>{todayReview ? "Review complete" : "End the day gently"}</h2>
-                </div>
-                <span className="pill">{todayReview ? "saved" : "open"}</span>
-              </div>
-
-              <p className="muted-text">
-                This is a map, not a moral judgment. Capture what rolls forward
-                and what tomorrow should protect.
-              </p>
-
-              {todayReview?.protectedTomorrow ? (
-                <p className="muted-text">
-                  <strong>Tomorrow protects:</strong>{" "}
-                  {todayReview.protectedTomorrow}
-                </p>
-              ) : null}
-
-              <Button type="button" onClick={() => setIsEndOfDayReviewOpen(true)}>
-                {todayReview ? "Edit Shutdown Review" : "Shutdown Review"}
-              </Button>
-            </Card>
-          </div>
+          <CapturedItemsCard
+            items={capturedItems}
+            onDelete={deleteCapture}
+            onClearAll={clearCaptures}
+            onCreateTask={(item) => createTaskFromCapture(item, deleteCapture)}
+          />
         </div>
       </main>
 

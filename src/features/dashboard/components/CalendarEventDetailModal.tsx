@@ -275,10 +275,10 @@ export function CalendarEventDetailModal({
           ) : (
             <p className="muted-text">
               {item.source === "working-block"
-                ? "Working blocks are planned availability containers, not completed work."
+                ? "Working blocks are planned availability containers. Edit Daily Check-In changes this block; task assignment happens in Today's Work Blocks above the calendar."
                 : item.source === "planned-task"
                   ? "Planned task blocks are intentions inside available time. Actual work comes later."
-                : "Editing and deletion controls come next. For now, this confirms the calendar knows what each item is."}
+                  : "Editing and deletion controls come next. For now, this confirms the calendar knows what each item is."}
             </p>
           )}
         </div>
