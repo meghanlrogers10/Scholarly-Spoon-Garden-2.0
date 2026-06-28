@@ -2327,6 +2327,8 @@
 }
 
 .today-control-strip {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: minmax(180px, 0.65fr) minmax(360px, 1.35fr) auto;
   gap: 0.85rem;
@@ -2340,6 +2342,8 @@
 }
 
 .today-control-mode {
+  position: relative;
+  z-index: 2;
   display: grid;
   gap: 0.3rem;
 }
@@ -2352,6 +2356,9 @@
 
 .today-control-mode select,
 .today-control-mode input {
+  pointer-events: auto;
+  position: relative;
+  z-index: 2;
   width: 100%;
   border: 1px solid var(--color-border);
   border-radius: 8px;

@@ -36,7 +36,7 @@ const planningModeLabels: Record<PlanningMode, string> = {
   "research-push": "Research push",
   "teaching-survival": "Teaching survival",
   "service-triage": "Service triage",
-  "low-energy": "Low-energy",
+  "low-energy": "Low-energy mode",
   "deadline-emergency": "Deadline emergency",
   "small-task-cleanup": "Small-task cleanup",
 };
@@ -67,7 +67,6 @@ export function TodayControlStrip({
         <span>Mode</span>
         <select
           value={checkIn?.planningMode ?? "balanced"}
-          disabled={!checkIn}
           onChange={(event) => onModeChange(event.target.value as PlanningMode)}
         >
           {planningModeOptions.map((mode) => (

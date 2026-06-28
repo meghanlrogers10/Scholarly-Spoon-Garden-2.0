@@ -1,6 +1,6 @@
 import "./dashboard.css";
 import "./calendar.css";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { TIMER_SESSIONS_STORAGE_KEY } from "../../shared/constants/timerStorage";
 import { sampleCalendarItems } from "../../shared/data/sampleDashboard";
@@ -12,8 +12,6 @@ import type {
 } from "../../shared/types/calendar";
 import type { TimerSession } from "../../shared/types/timer";
 import type { ManualWorkLogEntry } from "../../shared/types/workLog";
-import { Button } from "../../shared/ui/Button";
-import { Card } from "../../shared/ui/Card";
 import { CalendarCard } from "./components/CalendarCard";
 import { CapturedItemsCard } from "./components/CapturedItemsCard";
 import { DailyCheckInModal } from "./components/DailyCheckInModal";
@@ -34,19 +32,12 @@ import { useEndOfDayReview } from "./hooks/useEndOfDayReview";
 import { useManualWorkLogs } from "./hooks/useManualWorkLogs";
 import { usePlannedTaskBlocks } from "./hooks/usePlannedTaskBlocks";
 import { getManualWorkDurationMinutes } from "./utils/actualWorkPlanning";
-import { buildBlockSuggestions } from "./utils/blockSuggestions";
-import {
-  createPlannedTaskBlockFromTask,
-  mapPlannedTaskBlocksToCalendarEvents,
-} from "./utils/plannedTaskBlocks";
+import { mapPlannedTaskBlocksToCalendarEvents } from "./utils/plannedTaskBlocks";
 import {
   findShutdownReviewTask,
   isShutdownReviewTask,
 } from "./utils/shutdownReviewTask";
-import {
-  getNextUpcomingWorkingBlock,
-  mapWorkingBlocksToCalendarEvents,
-} from "./utils/workingBlockCalendar";
+import { mapWorkingBlocksToCalendarEvents } from "./utils/workingBlockCalendar";
 import type {
   DailyCheckIn,
   PlannedTaskBlock,
@@ -191,69 +182,6 @@ function enrichWorkingBlocksForCalendar(
   }));
 }
 
-function CompactRecommendationsCard({
-  blockPlan,
-  onOpenDailyPlan,
-  onAcceptSuggestion,
-}: {
-  blockPlan: ReturnType<typeof buildBlockSuggestions>["blockPlans"][number] | undefined;
-  onOpenDailyPlan: () => void;
-  onAcceptSuggestion: (taskId: string, workingBlockId: string) => void;
-}) {
-  const topSuggestions = blockPlan?.suggestions.slice(0, 3) ?? [];
-
-  return (
-    <Card className="compact-recommendations-card">
-      <div className="card-heading-row">
-        <div>
-          <p className="eyebrow">Next block</p>
-          <h2>
-            {blockPlan
-              ? `${blockPlan.block.startTime}-${blockPlan.block.endTime}`
-              : "No work block selected"}
-          </h2>
-          <p className="muted-text">
-            A quick fit check. Open Daily Plan to review every block.
-          </p>
-        </div>
-        <Button type="button" variant="soft" onClick={onOpenDailyPlan}>
-          Open Daily Plan
-        </Button>
-      </div>
-
-      {topSuggestions.length === 0 ? (
-        <p className="muted-text">
-          No compact suggestion yet. Add work blocks or open tasks, then generate
-          a plan.
-        </p>
-      ) : (
-        <div className="compact-recommendation-list">
-          {topSuggestions.map((suggestion) => (
-            <article key={suggestion.task.id} className="compact-recommendation-row">
-              <div>
-                <strong>{suggestion.task.title}</strong>
-                <span>
-                  {suggestion.estimatedMinutes} min · {suggestion.spoonCost} spoons ·{" "}
-                  {suggestion.reasons.slice(0, 2).join(", ")}
-                </span>
-              </div>
-              <Button
-                type="button"
-                variant="soft"
-                onClick={() =>
-                  onAcceptSuggestion(suggestion.task.id, suggestion.workingBlockId)
-                }
-              >
-                Accept
-              </Button>
-            </article>
-          ))}
-        </div>
-      )}
-    </Card>
-  );
-}
-
 export function DashboardPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -286,7 +214,6 @@ export function DashboardPage() {
     addTaskToToday,
     removeTaskFromToday,
     postponeTask,
-    planTaskInWorkingBlock,
     ensureShutdownReviewTask,
     completeShutdownReviewTask,
     reopenShutdownReviewTaskIfReviewIncomplete,
@@ -300,7 +227,6 @@ export function DashboardPage() {
   const {
     plannedBlocks,
     getPlannedBlocksForDate,
-    addPlannedTaskBlock,
     updatePlannedTaskBlock,
     removePlannedTaskBlock,
   } = usePlannedTaskBlocks();
@@ -318,31 +244,6 @@ export function DashboardPage() {
     Boolean(todayCheckIn) &&
     !isShutdownReviewDone &&
     shouldShowHardStopNudge(todayCheckIn);
-  const suggestionResult = useMemo(
-    () =>
-      buildBlockSuggestions({
-        tasks: allTasks,
-        dailyCheckIn: todayCheckIn,
-        workingBlocks: todayCheckIn?.workingBlocks ?? [],
-        plannedBlocks: todayPlannedBlocks,
-        planningMode:
-          todayCheckIn?.planningMode ?? settings.defaultPlanningMode ?? "balanced",
-        date: todayDate,
-      }),
-    [
-      allTasks,
-      settings.defaultPlanningMode,
-      todayCheckIn,
-      todayDate,
-      todayPlannedBlocks,
-    ],
-  );
-  const nextWorkingBlock = todayCheckIn
-    ? getNextUpcomingWorkingBlock(todayCheckIn.workingBlocks)
-    : undefined;
-  const nextBlockPlan =
-    suggestionResult.blockPlans.find((plan) => plan.block.id === nextWorkingBlock?.id) ??
-    suggestionResult.blockPlans[0];
   useEffect(() => {
     if (
       settings.dailyCheckInEnabled &&
@@ -589,7 +490,11 @@ export function DashboardPage() {
 
   function handlePlanningModeChange(mode: PlanningMode) {
     if (!todayCheckIn) {
-      handleOpenDailyPlan();
+      handleSaveTodayCheckIn({
+        availableSpoons: 3,
+        planningMode: mode,
+        workingBlocks: [],
+      });
       return;
     }
 
@@ -603,19 +508,6 @@ export function DashboardPage() {
       avoidHighEmotionTasks: todayCheckIn.avoidHighEmotionTasks,
       hardStopTime: todayCheckIn.hardStopTime,
     });
-  }
-
-  function handlePlanTaskInBlock(taskId: string, workingBlockId: string) {
-    const task = allTasks.find((item) => item.id === taskId);
-
-    if (!task) {
-      return;
-    }
-
-    addPlannedTaskBlock(
-      createPlannedTaskBlockFromTask(task, workingBlockId, todayDate),
-    );
-    planTaskInWorkingBlock(taskId, workingBlockId);
   }
 
   function handleRemovePlannedTask(item: CalendarItem) {
@@ -685,12 +577,6 @@ export function DashboardPage() {
             better data.
           </p>
         ) : null}
-
-        <CompactRecommendationsCard
-          blockPlan={nextBlockPlan}
-          onOpenDailyPlan={handleOpenDailyPlan}
-          onAcceptSuggestion={handlePlanTaskInBlock}
-        />
 
         <CalendarCard
           items={dashboardCalendarItems}

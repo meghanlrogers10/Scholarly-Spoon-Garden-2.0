@@ -14,6 +14,7 @@ import { DailyCheckInSummaryCard } from "../components/DailyCheckInSummaryCard";
 import { EndOfDayReviewModal } from "../components/EndOfDayReviewModal";
 import { ManualWorkLogModal } from "../components/ManualWorkLogModal";
 import { TaskEditorModal } from "../components/TaskEditorModal";
+import { TodayControlStrip } from "../components/TodayControlStrip";
 import { TodaysWorkBlocksCard } from "../components/TodaysWorkBlocksCard";
 import { TodayBuilderCard } from "../components/TodayBuilderCard";
 import { useDailyCheckIn } from "../hooks/useDailyCheckIn";
@@ -28,6 +29,8 @@ import {
   getWorkingBlockRemainingMinutes,
 } from "../utils/plannedTaskBlocks";
 import { getTaskEstimateMinutes } from "../utils/todayBuilder";
+import { getNextUpcomingWorkingBlock } from "../utils/workingBlockCalendar";
+import type { PlanningMode } from "../../../shared/types/planning";
 
 function getTomorrowDateKey(date: string) {
   const tomorrow = new Date(`${date}T00:00:00`);
@@ -97,12 +100,37 @@ export function DailyPlanningPage() {
       todayPlannedBlocks,
     ],
   );
+  const nextWorkingBlock = todayCheckIn
+    ? getNextUpcomingWorkingBlock(todayCheckIn.workingBlocks)
+    : undefined;
+  const nextBlockPlan =
+    suggestionResult.blockPlans.find((plan) => plan.block.id === nextWorkingBlock?.id) ??
+    suggestionResult.blockPlans[0];
 
   function handleSaveTodayCheckIn(
     input: Parameters<typeof saveTodayCheckIn>[0],
   ) {
     saveTodayCheckIn(input);
     ensureShutdownReviewTask(todayDate, Boolean(todayReview));
+  }
+
+  function handlePlanningModeChange(mode: PlanningMode) {
+    handleSaveTodayCheckIn({
+      availableSpoons: todayCheckIn?.availableSpoons ?? 3,
+      planningMode: mode,
+      workingBlocks: todayCheckIn?.workingBlocks ?? [],
+      avoidNotes: todayCheckIn?.avoidNotes,
+      protectNotes: todayCheckIn?.protectNotes,
+      preferLowEnergyTasks: todayCheckIn?.preferLowEnergyTasks,
+      avoidHighEmotionTasks: todayCheckIn?.avoidHighEmotionTasks,
+      hardStopTime: todayCheckIn?.hardStopTime,
+    });
+  }
+
+  function handleFocusSuggestions() {
+    document
+      .querySelector(".block-suggestions-card")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function handlePlanTaskInBlock(taskId: string, workingBlockId: string) {
@@ -237,6 +265,16 @@ export function DailyPlanningPage() {
         </Link>
       </header>
 
+      <TodayControlStrip
+        checkIn={todayCheckIn}
+        plannedBlocks={todayPlannedBlocks}
+        onModeChange={handlePlanningModeChange}
+        onOpenDailyPlan={handleFocusSuggestions}
+        onGenerateSuggestions={handleFocusSuggestions}
+        onLogWork={() => setIsManualWorkLogOpen(true)}
+        onShutdown={() => setIsEndOfDayReviewOpen(true)}
+      />
+
       <div className="daily-planning-grid">
         <DailyCheckInSummaryCard
           checkIn={todayCheckIn}
@@ -267,6 +305,58 @@ export function DailyPlanningPage() {
           </Button>
         </Card>
       </div>
+
+      <Card className="compact-recommendations-card daily-plan-next-block-card">
+        <div className="card-heading-row">
+          <div>
+            <p className="eyebrow">Next block</p>
+            <h2>
+              {nextBlockPlan
+                ? `${nextBlockPlan.block.startTime}-${nextBlockPlan.block.endTime}`
+                : "No work block selected"}
+            </h2>
+            <p className="muted-text">
+              Quick preview before the full block-by-block suggestion list.
+            </p>
+          </div>
+        </div>
+
+        {nextBlockPlan?.suggestions.length ? (
+          <div className="compact-recommendation-list">
+            {nextBlockPlan.suggestions.slice(0, 3).map((suggestion) => (
+              <article
+                key={suggestion.task.id}
+                className="compact-recommendation-row"
+              >
+                <div>
+                  <strong>{suggestion.task.title}</strong>
+                  <span>
+                    {suggestion.estimatedMinutes} min · {suggestion.spoonCost}{" "}
+                    spoons · {suggestion.reasons.slice(0, 2).join(", ")}
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  variant="soft"
+                  onClick={() =>
+                    handlePlanTaskInBlock(
+                      suggestion.task.id,
+                      suggestion.workingBlockId,
+                    )
+                  }
+                >
+                  Accept
+                </Button>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="muted-text">
+            No compact suggestion yet. Add work blocks and open tasks, then use
+            the suggestions below.
+          </p>
+        )}
+      </Card>
 
       <BlockSuggestionsCard
         result={suggestionResult}
