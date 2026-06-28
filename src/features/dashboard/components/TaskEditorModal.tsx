@@ -225,6 +225,7 @@ export function TaskEditorModal({
                 <option value="teaching">Teaching</option>
                 <option value="research">Research</option>
                 <option value="mindspace">Mindspace</option>
+                <option value="shutdown-review">Shutdown review</option>
                 <option value="other">Other</option>
               </select>
             </label>

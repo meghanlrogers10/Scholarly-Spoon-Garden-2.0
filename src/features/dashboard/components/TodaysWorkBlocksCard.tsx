@@ -171,7 +171,7 @@ export function TodaysWorkBlocksCard({
           <p className="eyebrow">Block-first planning</p>
           <h2>Today&apos;s Work Blocks</h2>
           <p className="muted-text">
-            Available time containers with the planned tasks placed inside them.
+            Available time containers first, then the tasks planned inside each one.
           </p>
         </div>
 
@@ -187,7 +187,13 @@ export function TodaysWorkBlocksCard({
 
       {!checkIn || workingBlocks.length === 0 ? (
         <div className="work-block-empty-state">
-          <p className="muted-text">No work blocks saved for today yet.</p>
+          <div>
+            <h3>No work blocks saved for today yet.</h3>
+            <p className="muted-text">
+              Start Daily Check-In to sketch the actual time containers for the
+              day. Then you can place open tasks inside each block here.
+            </p>
+          </div>
           <Button type="button" onClick={onStartCheckIn}>
             Start Daily Check-In
           </Button>
@@ -232,6 +238,7 @@ export function TodaysWorkBlocksCard({
               >
                 <div className="work-block-card-header">
                   <div>
+                    <p className="work-block-kicker">Available time</p>
                     <h3>{formatWorkingBlockTimeRange(block)}</h3>
                     <p className="muted-text">
                       {formatWorkingBlockDuration(capacityMinutes)} available
@@ -242,7 +249,7 @@ export function TodaysWorkBlocksCard({
                     <span className="pill">{block.status}</span>
                     <span>{formatWorkingBlockDuration(plannedMinutes)} planned</span>
                     <span>
-                      {formatWorkingBlockDuration(Math.max(remainingMinutes, 0))} open
+                      {formatWorkingBlockDuration(Math.max(remainingMinutes, 0))} still open
                     </span>
                     {actualMinutes > 0 ? (
                       <span>{formatWorkingBlockDuration(actualMinutes)} actual</span>
@@ -256,12 +263,15 @@ export function TodaysWorkBlocksCard({
 
                 {isOverCapacity ? (
                   <p className="work-block-capacity-warning">
-                    Over capacity by{" "}
+                    A little over capacity: move or shorten about{" "}
                     {formatWorkingBlockDuration(Math.abs(remainingMinutes))}.
                   </p>
                 ) : null}
 
                 <div className="work-block-task-list">
+                  <p className="work-block-section-label">
+                    Planned inside this block
+                  </p>
                   {blockPlannedTasks.length === 0 ? (
                     <p className="muted-text">
                       No planned tasks in this block yet.

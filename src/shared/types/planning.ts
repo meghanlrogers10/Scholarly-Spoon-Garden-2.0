@@ -67,6 +67,7 @@ export type TodayPlanBucket = {
   backupTaskIds: string[];
   postponeTaskIds: string[];
   quickWinTaskIds: string[];
+  shutdownTaskIds: string[];
 };
 
 export type TodayBuilderResult = {

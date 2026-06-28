@@ -185,9 +185,13 @@ export function TodayBuilderCard({
     <Card className="today-builder-card">
       <div className="card-heading-row">
         <div>
-          <p className="eyebrow">Planning brain</p>
+          <p className="eyebrow">Recommendation engine</p>
           <h2>Today Builder</h2>
-          <p className="muted-text">A reality check before the day gets loud.</p>
+          <p className="muted-text">
+            Recommendations reflect mode, due dates, spoons, estimates, and
+            available blocks. Generate a realistic plan, then adjust assignments
+            in Today&apos;s Work Blocks.
+          </p>
         </div>
 
         <div className="today-builder-actions">
@@ -282,6 +286,18 @@ export function TodayBuilderCard({
           taskIds={result.buckets.backupTaskIds}
           taskById={taskById}
           emptyText="No backup tasks found."
+        />
+        <TaskList
+          title="Shutdown task"
+          taskIds={result.buckets.shutdownTaskIds}
+          taskById={taskById}
+          emptyText="No shutdown task is surfaced yet."
+          workingBlocks={workingBlocks}
+          plannedBlocks={plannedBlocks}
+          canPlan
+          selectedBlockByTaskId={selectedBlockByTaskId}
+          onSelectBlock={handleSelectBlock}
+          onPlanTaskInBlock={onPlanTaskInBlock}
         />
         <TaskList
           title="Postpone"

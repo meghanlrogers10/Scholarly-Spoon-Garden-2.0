@@ -3,6 +3,11 @@ import { useTaskBridge } from "../../../shared/hooks/useTaskBridge";
 import type { Task } from "../../../shared/types/task";
 import type { TaskFormInput } from "../components/TaskEditorModal";
 import type { CapturedItem } from "./useDashboardCaptures";
+import {
+  ensureShutdownReviewTaskForToday,
+  markShutdownReviewTaskDone,
+  maybeReopenShutdownReviewTaskIfReviewIncomplete,
+} from "../utils/shutdownReviewTask";
 
 function isTodayTask(task: Task) {
   return task.today !== false && task.status === "todo";
@@ -227,6 +232,29 @@ function planTaskInWorkingBlock(id: string, workingBlockId: string) {
   );
 }
 
+function ensureShutdownReviewTask(date: string, reviewComplete: boolean) {
+  updateTasks((currentTasks) =>
+    ensureShutdownReviewTaskForToday(currentTasks, date, reviewComplete),
+  );
+}
+
+function completeShutdownReviewTask(date: string) {
+  updateTasks((currentTasks) => markShutdownReviewTaskDone(currentTasks, date));
+}
+
+function reopenShutdownReviewTaskIfReviewIncomplete(
+  date: string,
+  reviewComplete: boolean,
+) {
+  updateTasks((currentTasks) =>
+    maybeReopenShutdownReviewTaskIfReviewIncomplete(
+      currentTasks,
+      date,
+      reviewComplete,
+    ),
+  );
+}
+
   function deleteTask(id: string) {
     updateTasks((currentTasks) =>
       currentTasks.filter((task) => task.id !== id),
@@ -264,6 +292,9 @@ function planTaskInWorkingBlock(id: string, workingBlockId: string) {
     removeTaskFromToday,
     postponeTask,
     planTaskInWorkingBlock,
+    ensureShutdownReviewTask,
+    completeShutdownReviewTask,
+    reopenShutdownReviewTaskIfReviewIncomplete,
     adjustActualMinutesForTask,
     addActualMinutesToTask,
     deleteTask,
