@@ -1,4 +1,8 @@
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import type {
+  GoogleCalendarSyncDirection,
+  GoogleCalendarSyncSettings,
+} from "../types/googleCalendarSync";
 import { defaultAppSettings, type AppSettings } from "../types/settings";
 import { db } from "./firebaseClient";
 import { getUserAppSettingsDocumentSegments } from "./firestorePaths";
@@ -27,6 +31,11 @@ const planningModes = [
 const timerReflectionLevels = ["none", "light", "full"] as const;
 const textSizes = ["standard", "large", "extra-large"] as const;
 const layoutDensities = ["compact", "comfortable", "spacious"] as const;
+const googleCalendarSyncDirections = [
+  "read-only",
+  "write-only",
+  "two-way",
+] as const;
 
 function requireDb() {
   if (!db) {
@@ -52,6 +61,12 @@ function asString(value: unknown) {
   return typeof value === "string" && value.trim() ? value : undefined;
 }
 
+function asStringArray(value: unknown) {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
 function asEnum<TValue extends string>(
   value: unknown,
   allowed: readonly TValue[],
@@ -64,6 +79,66 @@ function timestamp(value?: string) {
   const time = new Date(value ?? "").getTime();
 
   return Number.isFinite(time) ? time : 0;
+}
+
+function normalizeGoogleCalendarSyncSettings(
+  value: unknown,
+): GoogleCalendarSyncSettings {
+  const fallback = defaultAppSettings.googleCalendarSync;
+
+  if (!isRecord(value)) {
+    return fallback;
+  }
+
+  return {
+    enabled: asBoolean(value.enabled, fallback.enabled),
+    syncDirection: asEnum(
+      value.syncDirection,
+      googleCalendarSyncDirections,
+      fallback.syncDirection as GoogleCalendarSyncDirection,
+    ),
+    importExternalEvents: asBoolean(
+      value.importExternalEvents,
+      fallback.importExternalEvents,
+    ),
+    importAsBusyOnly: asBoolean(value.importAsBusyOnly, fallback.importAsBusyOnly),
+    selectedExternalCalendarIds: asStringArray(
+      value.selectedExternalCalendarIds,
+    ),
+    targetExternalCalendarId:
+      asString(value.targetExternalCalendarId) ??
+      fallback.targetExternalCalendarId,
+    exportWorkingBlocks: asBoolean(
+      value.exportWorkingBlocks,
+      fallback.exportWorkingBlocks,
+    ),
+    exportPlannedTaskBlocks: asBoolean(
+      value.exportPlannedTaskBlocks,
+      fallback.exportPlannedTaskBlocks,
+    ),
+    exportTimerSessions: asBoolean(
+      value.exportTimerSessions,
+      fallback.exportTimerSessions,
+    ),
+    exportManualWorkLogs: asBoolean(
+      value.exportManualWorkLogs,
+      fallback.exportManualWorkLogs,
+    ),
+    exportResearchDeadlines: asBoolean(
+      value.exportResearchDeadlines,
+      fallback.exportResearchDeadlines,
+    ),
+    exportTeachingDeadlines: asBoolean(
+      value.exportTeachingDeadlines,
+      fallback.exportTeachingDeadlines,
+    ),
+    exportServiceDeadlines: asBoolean(
+      value.exportServiceDeadlines,
+      fallback.exportServiceDeadlines,
+    ),
+    lastSyncAt: asString(value.lastSyncAt),
+    lastSyncError: asString(value.lastSyncError),
+  };
 }
 
 export function normalizeAppSettings(value: unknown): AppSettings | null {
@@ -94,6 +169,9 @@ export function normalizeAppSettings(value: unknown): AppSettings | null {
     showSampleCalendarEvents: asBoolean(
       value.showSampleCalendarEvents,
       defaultAppSettings.showSampleCalendarEvents,
+    ),
+    googleCalendarSync: normalizeGoogleCalendarSyncSettings(
+      value.googleCalendarSync,
     ),
     dailyCheckInEnabled: asBoolean(
       value.dailyCheckInEnabled,

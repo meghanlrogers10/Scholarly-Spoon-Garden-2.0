@@ -2,10 +2,12 @@ import "../settings.css";
 import { Link } from "react-router-dom";
 import { CloudSyncCard } from "../components/CloudSyncCard";
 import { DataBackupCard } from "../components/DataBackupCard";
+import { mergeGoogleCalendarSyncSettings } from "../utils/googleCalendarSyncSettings";
 import { useAppSettings } from "../../../shared/hooks/useAppSettings";
 import { Button } from "../../../shared/ui/Button";
 import { Card } from "../../../shared/ui/Card";
 import { PageHeader } from "../../../shared/ui/PageHeader";
+import type { GoogleCalendarSyncDirection } from "../../../shared/types/googleCalendarSync";
 import type {
   CalendarDensity,
   LayoutDensity,
@@ -65,6 +67,9 @@ function ToggleRow({
 
 export function SettingsPage() {
   const { settings, updateSettings, resetSettings } = useAppSettings();
+  const googleCalendarSync = mergeGoogleCalendarSyncSettings(
+    settings.googleCalendarSync,
+  );
 
   function handleStartHourChange(value: string) {
     const nextStartHour = Number(value);
@@ -89,6 +94,17 @@ export function SettingsPage() {
     updateSettings({
       calendarDayStartHour: safeStartHour,
       calendarDayEndHour: nextEndHour,
+    });
+  }
+
+  function updateGoogleCalendarSync(
+    updates: Partial<typeof googleCalendarSync>,
+  ) {
+    updateSettings({
+      googleCalendarSync: mergeGoogleCalendarSyncSettings({
+        ...googleCalendarSync,
+        ...updates,
+      }),
     });
   }
 
@@ -477,6 +493,149 @@ export function SettingsPage() {
           </div>
         </Card>
       </div>
+
+      <Card className="settings-calendar-sync-card">
+        <div className="card-heading-row">
+          <div>
+            <p className="eyebrow">Google Calendar</p>
+            <h2>Google Calendar Sync</h2>
+            <p className="muted-text">
+              Google Calendar will be the first supported calendar integration.
+              This version stores preferences only; connecting your account,
+              selecting calendars, and syncing will come in the next sprint.
+              Direct Apple/iCloud sync is not part of this version.
+            </p>
+          </div>
+          <span className="pill">Planning only</span>
+        </div>
+
+        <div className="settings-calendar-action-row">
+          <Button variant="soft" disabled>
+            Connect Google Calendar
+          </Button>
+          <Button variant="soft" disabled>
+            Select Google calendars
+          </Button>
+          <Button variant="soft" disabled>
+            Sync now
+          </Button>
+          <span className="settings-status-pill">Coming soon</span>
+        </div>
+
+        <div className="settings-form-grid">
+          <label>
+            <span>Sync direction</span>
+            <select
+              value={googleCalendarSync.syncDirection}
+              onChange={(event) =>
+                updateGoogleCalendarSync({
+                  syncDirection: event.target
+                    .value as GoogleCalendarSyncDirection,
+                })
+              }
+            >
+              <option value="read-only">Read only</option>
+              <option value="write-only">Write only</option>
+              <option value="two-way">Two-way later</option>
+            </select>
+            <small>
+              Read only imports Google events as busy-time constraints first.
+            </small>
+          </label>
+        </div>
+
+        <div className="settings-toggle-list">
+          <ToggleRow
+            label="Enable Google Calendar sync planning"
+            description="Save local preferences for the future Google Calendar connection without making any API calls yet."
+            checked={googleCalendarSync.enabled}
+            onChange={(checked) =>
+              updateGoogleCalendarSync({ enabled: checked })
+            }
+          />
+          <ToggleRow
+            label="Import Google events as busy time"
+            description="External Google events will become busy-time constraints inside SSG before any richer event import."
+            checked={
+              googleCalendarSync.importExternalEvents &&
+              googleCalendarSync.importAsBusyOnly
+            }
+            onChange={(checked) =>
+              updateGoogleCalendarSync({
+                importExternalEvents: checked,
+                importAsBusyOnly: true,
+              })
+            }
+          />
+          <ToggleRow
+            label="Export working blocks"
+            description="Opt in later when you want SSG working blocks to appear on Google Calendar."
+            checked={googleCalendarSync.exportWorkingBlocks}
+            onChange={(checked) =>
+              updateGoogleCalendarSync({ exportWorkingBlocks: checked })
+            }
+          />
+          <ToggleRow
+            label="Export planned task blocks"
+            description="Opt in later when planned task blocks are ready to create Google Calendar events."
+            checked={googleCalendarSync.exportPlannedTaskBlocks}
+            onChange={(checked) =>
+              updateGoogleCalendarSync({ exportPlannedTaskBlocks: checked })
+            }
+          />
+          <ToggleRow
+            label="Export research deadlines"
+            description="Deadline-style dates are calendar-friendly, so this starts export-ready."
+            checked={googleCalendarSync.exportResearchDeadlines}
+            onChange={(checked) =>
+              updateGoogleCalendarSync({ exportResearchDeadlines: checked })
+            }
+          />
+          <ToggleRow
+            label="Export teaching deadlines"
+            description="Keep course and teaching deadlines available for future Google Calendar export."
+            checked={googleCalendarSync.exportTeachingDeadlines}
+            onChange={(checked) =>
+              updateGoogleCalendarSync({ exportTeachingDeadlines: checked })
+            }
+          />
+          <ToggleRow
+            label="Export service deadlines"
+            description="Keep committee and service deadlines available for future Google Calendar export."
+            checked={googleCalendarSync.exportServiceDeadlines}
+            onChange={(checked) =>
+              updateGoogleCalendarSync({ exportServiceDeadlines: checked })
+            }
+          />
+          <ToggleRow
+            label="Export timer sessions"
+            description="Off by default because timer history is more personal than calendar planning."
+            checked={googleCalendarSync.exportTimerSessions}
+            onChange={(checked) =>
+              updateGoogleCalendarSync({ exportTimerSessions: checked })
+            }
+          />
+          <ToggleRow
+            label="Export manual work logs"
+            description="Off by default so manually logged work stays private unless you choose otherwise later."
+            checked={googleCalendarSync.exportManualWorkLogs}
+            onChange={(checked) =>
+              updateGoogleCalendarSync({ exportManualWorkLogs: checked })
+            }
+          />
+        </div>
+
+        <div className="settings-calendar-apple-note">
+          <h3>Want this in Apple Calendar too?</h3>
+          <p>
+            SSG will sync with Google Calendar first. On iPhone, iPad, or Mac,
+            add the same Google account to Apple Calendar and turn on
+            Calendars. Apple Calendar will then display those Google calendar
+            events. Direct iCloud or Apple Calendar sync may be considered
+            later, but it is not needed for this path.
+          </p>
+        </div>
+      </Card>
 
       <CloudSyncCard />
 
