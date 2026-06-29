@@ -36,11 +36,9 @@ export function useResearchSubmissions() {
   function updateSubmissions(
     updater: (currentSubmissions: ResearchSubmission[]) => ResearchSubmission[]
   ) {
-    setSubmissions((currentSubmissions) => {
-      const updatedSubmissions = updater(currentSubmissions);
-      saveSubmissions(updatedSubmissions);
-      return updatedSubmissions;
-    });
+    const updatedSubmissions = updater(loadSubmissions());
+    saveSubmissions(updatedSubmissions);
+    setSubmissions(updatedSubmissions);
   }
 
   function refreshSubmissions() {

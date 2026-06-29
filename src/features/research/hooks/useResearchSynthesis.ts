@@ -41,11 +41,9 @@ export function useResearchSynthesis() {
       currentSections: ResearchSynthesisSection[]
     ) => ResearchSynthesisSection[]
   ) {
-    setSections((currentSections) => {
-      const updatedSections = updater(currentSections);
-      saveSections(updatedSections);
-      return updatedSections;
-    });
+    const updatedSections = updater(loadSections());
+    saveSections(updatedSections);
+    setSections(updatedSections);
   }
 
   function refreshSections() {

@@ -81,6 +81,25 @@ function timestamp(value?: string) {
   return Number.isFinite(time) ? time : 0;
 }
 
+function omitUndefinedValues<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((item) => omitUndefinedValues(item)) as T;
+  }
+
+  if (!isRecord(value)) {
+    return value;
+  }
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([, entryValue]) => entryValue !== undefined)
+      .map(([entryKey, entryValue]) => [
+        entryKey,
+        omitUndefinedValues(entryValue),
+      ]),
+  ) as T;
+}
+
 function normalizeGoogleCalendarSyncSettings(
   value: unknown,
 ): GoogleCalendarSyncSettings {
@@ -267,11 +286,11 @@ export async function readUserAppSettings(
 
 export async function saveUserAppSettings(uid: string, settings: unknown) {
   const firestore = requireDb();
-  const normalizedSettings = {
+  const normalizedSettings = omitUndefinedValues({
     ...normalizeLocalAppSettings(settings),
     updatedAt:
       normalizeAppSettings(settings)?.updatedAt ?? new Date().toISOString(),
-  };
+  });
 
   await setDoc(
     doc(firestore, ...getUserAppSettingsDocumentSegments(uid)),

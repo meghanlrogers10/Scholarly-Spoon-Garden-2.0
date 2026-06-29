@@ -187,11 +187,9 @@ export function useResearchLog() {
   function updateEntries(
     updater: (currentEntries: ResearchLogEntry[]) => ResearchLogEntry[]
   ) {
-    setEntries((currentEntries) => {
-      const updatedEntries = updater(currentEntries);
-      saveEntries(updatedEntries);
-      return updatedEntries;
-    });
+    const updatedEntries = updater(loadEntries());
+    saveEntries(updatedEntries);
+    setEntries(updatedEntries);
   }
 
   function refreshLogEntries() {

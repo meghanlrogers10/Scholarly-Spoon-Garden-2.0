@@ -48,11 +48,9 @@ export function useResearchLiterature() {
   function updateSources(
     updater: (currentSources: ResearchLiteratureSource[]) => ResearchLiteratureSource[]
   ) {
-    setSources((currentSources) => {
-      const updatedSources = updater(currentSources);
-      saveSources(updatedSources);
-      return updatedSources;
-    });
+    const updatedSources = updater(loadSources());
+    saveSources(updatedSources);
+    setSources(updatedSources);
   }
 
   function refreshSources() {

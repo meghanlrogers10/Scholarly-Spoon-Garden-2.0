@@ -41,11 +41,9 @@ export function useResearchLiteratureReadingNotes() {
       currentNotes: ResearchLiteratureReadingNote[]
     ) => ResearchLiteratureReadingNote[]
   ) {
-    setReadingNotes((currentNotes) => {
-      const updatedNotes = updater(currentNotes);
-      saveReadingNotes(updatedNotes);
-      return updatedNotes;
-    });
+    const updatedNotes = updater(loadReadingNotes());
+    saveReadingNotes(updatedNotes);
+    setReadingNotes(updatedNotes);
   }
 
   function refreshReadingNotes() {

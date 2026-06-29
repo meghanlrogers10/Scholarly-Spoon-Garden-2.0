@@ -39,11 +39,9 @@ export function useResearchTasks() {
   const [tasks, setTasks] = useState<ResearchTask[]>(loadTasks);
 
   function updateTasks(updater: (currentTasks: ResearchTask[]) => ResearchTask[]) {
-    setTasks((currentTasks) => {
-      const updatedTasks = updater(currentTasks);
-      saveTasks(updatedTasks);
-      return updatedTasks;
-    });
+    const updatedTasks = updater(loadTasks());
+    saveTasks(updatedTasks);
+    setTasks(updatedTasks);
   }
 
   function refreshTasks() {

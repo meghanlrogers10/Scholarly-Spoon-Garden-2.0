@@ -928,6 +928,7 @@ export function CloudSaveControl({
           {lastResults.map((result) => (
             <span key={result.area}>
               {result.label}: {result.ok ? "synced" : "needs attention"}
+              {!result.ok ? ` - ${result.message}` : ""}
             </span>
           ))}
         </div>

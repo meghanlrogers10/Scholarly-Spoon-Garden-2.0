@@ -82,11 +82,9 @@ export function useResearchPrisma() {
   function updateRecords(
     updater: (currentRecords: ResearchPrismaRecord[]) => ResearchPrismaRecord[]
   ) {
-    setRecords((currentRecords) => {
-      const updatedRecords = updater(currentRecords);
-      saveRecords(updatedRecords);
-      return updatedRecords;
-    });
+    const updatedRecords = updater(loadRecords());
+    saveRecords(updatedRecords);
+    setRecords(updatedRecords);
   }
 
   function updateCriteria(
@@ -94,11 +92,9 @@ export function useResearchPrisma() {
       currentCriteria: ResearchPrismaCriteria[]
     ) => ResearchPrismaCriteria[]
   ) {
-    setCriteria((currentCriteria) => {
-      const updatedCriteria = updater(currentCriteria);
-      saveCriteria(updatedCriteria);
-      return updatedCriteria;
-    });
+    const updatedCriteria = updater(loadCriteria());
+    saveCriteria(updatedCriteria);
+    setCriteria(updatedCriteria);
   }
 
   function refreshPrisma() {

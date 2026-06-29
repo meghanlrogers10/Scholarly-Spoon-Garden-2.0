@@ -101,11 +101,9 @@ export function useResearchDrafts() {
   function updateDrafts(
     updater: (currentDrafts: ResearchDraft[]) => ResearchDraft[]
   ) {
-    setDrafts((currentDrafts) => {
-      const updatedDrafts = updater(currentDrafts);
-      saveDrafts(updatedDrafts);
-      return updatedDrafts;
-    });
+    const updatedDrafts = updater(loadDrafts());
+    saveDrafts(updatedDrafts);
+    setDrafts(updatedDrafts);
   }
 
   function refreshDrafts() {

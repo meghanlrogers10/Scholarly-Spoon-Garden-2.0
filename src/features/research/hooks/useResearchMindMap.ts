@@ -45,11 +45,9 @@ export function useResearchMindMap() {
   function updateNodes(
     updater: (currentNodes: ResearchMindMapNode[]) => ResearchMindMapNode[]
   ) {
-    setNodes((currentNodes) => {
-      const updatedNodes = updater(currentNodes);
-      saveNodes(updatedNodes);
-      return updatedNodes;
-    });
+    const updatedNodes = updater(loadNodes());
+    saveNodes(updatedNodes);
+    setNodes(updatedNodes);
   }
 
   function refreshNodes() {
