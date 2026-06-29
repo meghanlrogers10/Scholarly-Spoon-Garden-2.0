@@ -265,6 +265,20 @@
   filter: saturate(0.72);
 }
 
+.calendar-event.external-google,
+.calendar-month-event.external-google {
+  background: rgba(232, 242, 255, 0.9);
+  border: 1px solid rgba(47, 111, 155, 0.34);
+  box-shadow:
+    inset 4px 0 0 rgba(47, 111, 155, 0.5),
+    0 1px 2px rgba(31, 41, 51, 0.08);
+  color: #1f3f54;
+}
+
+.calendar-event.external-google small {
+  color: rgba(31, 63, 84, 0.76);
+}
+
 /* OUTSIDE HOURS */
 
 .outside-hours-section {

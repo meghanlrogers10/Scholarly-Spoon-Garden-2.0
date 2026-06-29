@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { writeLocalStorageValue } from "../../../shared/utils/localStorageSync";
 import type {
   ResearchLiteratureSource,
   ResearchLiteratureSourceInput,
@@ -28,7 +29,7 @@ function loadSources() {
 }
 
 function saveSources(sources: ResearchLiteratureSource[]) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sources));
+  writeLocalStorageValue(STORAGE_KEY, sources);
 }
 
 function createSourceId(projectId: string) {

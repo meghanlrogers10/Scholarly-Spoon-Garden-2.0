@@ -20,7 +20,8 @@ export type CalendarSource =
   | "manual"
   | "task"
   | "working-block"
-  | "planned-task";
+  | "planned-task"
+  | "external-google";
 
 export type CalendarItem = {
   id: string;
@@ -50,4 +51,7 @@ export type CalendarItem = {
   estimateAccuracy?: EstimateAccuracy;
   hadHiddenSetup?: boolean;
   wasInterrupted?: boolean;
+  sourceUrl?: string;
+  externalCalendarId?: string;
+  importedAsBusyOnly?: boolean;
 };

@@ -16,6 +16,7 @@ import {
   RESEARCH_LITERATURE_NOTES_STORAGE_KEY,
   RESEARCH_LITERATURE_SOURCES_STORAGE_KEY,
   RESEARCH_LOG_ENTRIES_STORAGE_KEY,
+  RESEARCH_MIND_MAP_EDGES_STORAGE_KEY,
   RESEARCH_MIND_MAP_NODES_STORAGE_KEY,
   RESEARCH_PRISMA_CRITERIA_STORAGE_KEY,
   RESEARCH_PRISMA_RECORDS_STORAGE_KEY,
@@ -70,6 +71,7 @@ import {
   normalizeResearchLiteratureNotes,
   normalizeResearchLiteratureSources,
   normalizeResearchLogEntries,
+  normalizeResearchMindMapEdges,
   normalizeResearchMindMapNodes,
   normalizeResearchPrismaCriteriaList,
   normalizeResearchPrismaRecords,
@@ -457,6 +459,7 @@ async function syncResearch(uid: string) {
     literatureNotes: normalizeResearchLiteratureNotes(readJson(RESEARCH_LITERATURE_NOTES_STORAGE_KEY, [])),
     readingNotes: normalizeResearchReadingNotes(readJson(RESEARCH_READING_NOTES_STORAGE_KEY, [])),
     mindMapNodes: normalizeResearchMindMapNodes(readJson(RESEARCH_MIND_MAP_NODES_STORAGE_KEY, [])),
+    mindMapEdges: normalizeResearchMindMapEdges(readJson(RESEARCH_MIND_MAP_EDGES_STORAGE_KEY, [])),
     synthesisSections: normalizeResearchSynthesisSections(readJson(RESEARCH_SYNTHESIS_SECTIONS_STORAGE_KEY, [])),
     prismaRecords: normalizeResearchPrismaRecords(readJson(RESEARCH_PRISMA_RECORDS_STORAGE_KEY, [])),
     prismaCriteria: normalizeResearchPrismaCriteriaList(readJson(RESEARCH_PRISMA_CRITERIA_STORAGE_KEY, [])),
@@ -474,6 +477,7 @@ async function syncResearch(uid: string) {
   writeJson(RESEARCH_LITERATURE_NOTES_STORAGE_KEY, mergeResult.literatureNotes);
   writeJson(RESEARCH_READING_NOTES_STORAGE_KEY, mergeResult.readingNotes);
   writeJson(RESEARCH_MIND_MAP_NODES_STORAGE_KEY, mergeResult.mindMapNodes);
+  writeJson(RESEARCH_MIND_MAP_EDGES_STORAGE_KEY, mergeResult.mindMapEdges);
   writeJson(RESEARCH_SYNTHESIS_SECTIONS_STORAGE_KEY, mergeResult.synthesisSections);
   writeJson(RESEARCH_PRISMA_RECORDS_STORAGE_KEY, mergeResult.prismaRecords);
   writeJson(RESEARCH_PRISMA_CRITERIA_STORAGE_KEY, mergeResult.prismaCriteria);
@@ -484,7 +488,7 @@ async function syncResearch(uid: string) {
       ? ` Skipped ${uploadResult.skippedLargeRecords.length} oversized local records for cloud upload; local copies were preserved.`
       : "";
 
-  return `Research merged. ${counts.projects} projects, ${counts.tasks} tasks, ${counts.literatureSources} sources.${skippedMessage}`;
+  return `Research merged. ${counts.projects} projects, ${counts.tasks} tasks, ${counts.literatureSources} sources, ${counts.literatureNotes} notes, ${counts.mindMapNodes} map nodes, ${counts.mindMapEdges} map edges, ${counts.prismaRecords} PRISMA records.${skippedMessage}`;
 }
 
 async function runArea(area: CloudSaveArea, uid: string) {

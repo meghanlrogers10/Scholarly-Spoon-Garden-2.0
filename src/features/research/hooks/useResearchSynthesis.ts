@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { writeLocalStorageValue } from "../../../shared/utils/localStorageSync";
 import type {
   ResearchSynthesisSection,
   ResearchSynthesisSectionInput,
@@ -28,7 +29,7 @@ function loadSections() {
 }
 
 function saveSections(sections: ResearchSynthesisSection[]) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sections));
+  writeLocalStorageValue(STORAGE_KEY, sections);
 }
 
 export function useResearchSynthesis() {

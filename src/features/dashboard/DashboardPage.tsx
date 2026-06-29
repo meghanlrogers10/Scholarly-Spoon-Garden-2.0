@@ -1,9 +1,15 @@
 import "./dashboard.css";
 import "./calendar.css";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { TIMER_SESSIONS_STORAGE_KEY } from "../../shared/constants/timerStorage";
 import { sampleCalendarItems } from "../../shared/data/sampleDashboard";
+import {
+  emptyStoredGoogleCalendarEvents,
+  GOOGLE_CALENDAR_EVENTS_STORAGE_KEY,
+  mapGoogleCalendarEventsToCalendarItems,
+  type StoredGoogleCalendarEvents,
+} from "../../shared/google/googleCalendarStorage";
 import { useAppSettings } from "../../shared/hooks/useAppSettings";
 import { useLocalStorage } from "../../shared/hooks/useLocalStorage";
 import type {
@@ -234,12 +240,17 @@ export function DashboardPage() {
     TIMER_SESSIONS_STORAGE_KEY,
     [],
   );
+  const [storedGoogleCalendarEvents] =
+    useLocalStorage<StoredGoogleCalendarEvents>(
+      GOOGLE_CALENDAR_EVENTS_STORAGE_KEY,
+      emptyStoredGoogleCalendarEvents,
+    );
   const todayReview = getReviewForDate(todayDate);
   const todayPlannedBlocks = getPlannedBlocksForDate(todayDate);
   const shutdownReviewTask = findShutdownReviewTask(allTasks, todayDate);
   const isShutdownReviewDone = Boolean(todayReview) || shutdownReviewTask?.status === "done";
   const [clockMinute, setClockMinute] = useState(() => getCurrentMinutes());
-  const [notifiedHardStopDate, setNotifiedHardStopDate] = useState<string>();
+  const notifiedHardStopDateRef = useRef<string | undefined>(undefined);
   const showHardStopNudge =
     Boolean(todayCheckIn) &&
     !isShutdownReviewDone &&
@@ -266,7 +277,12 @@ export function DashboardPage() {
     if (todayCheckIn) {
       reopenShutdownReviewTaskIfReviewIncomplete(todayDate, Boolean(todayReview));
     }
-  }, [todayCheckIn?.id, todayCheckIn?.updatedAt, todayDate, todayReview?.id, todayReview?.updatedAt]);
+  }, [
+    reopenShutdownReviewTaskIfReviewIncomplete,
+    todayCheckIn,
+    todayDate,
+    todayReview,
+  ]);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -279,7 +295,7 @@ export function DashboardPage() {
   useEffect(() => {
     if (
       !showHardStopNudge ||
-      notifiedHardStopDate === todayDate ||
+      notifiedHardStopDateRef.current === todayDate ||
       !("Notification" in window) ||
       Notification.permission !== "granted"
     ) {
@@ -289,8 +305,8 @@ export function DashboardPage() {
     new Notification("Shutdown Review", {
       body: "Hard stop is here. Do the 5-minute Shutdown Review so tomorrow has better data.",
     });
-    setNotifiedHardStopDate(todayDate);
-  }, [notifiedHardStopDate, showHardStopNudge, todayDate, clockMinute]);
+    notifiedHardStopDateRef.current = todayDate;
+  }, [showHardStopNudge, todayDate, clockMinute]);
 
   useEffect(() => {
     if (new URLSearchParams(location.search).get("shutdownReview") === "1") {
@@ -373,10 +389,14 @@ export function DashboardPage() {
     plannedBlocks,
     allWorkingBlocks,
   );
+  const googleCalendarItems = mapGoogleCalendarEventsToCalendarItems(
+    storedGoogleCalendarEvents.events,
+  );
   const dashboardCalendarItems: CalendarItem[] = [
     ...taskCalendarItems,
     ...workingBlockCalendarItems,
     ...plannedTaskCalendarItems,
+    ...googleCalendarItems,
     ...timerCalendarItems,
     ...manualWorkCalendarItems,
     ...(settings.showSampleCalendarEvents ? sampleCalendarItems : []),

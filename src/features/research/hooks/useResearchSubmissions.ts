@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { writeLocalStorageValue } from "../../../shared/utils/localStorageSync";
 import type { ResearchSubmission, ResearchSubmissionInput } from "../types";
 import { useResearchStorageSync } from "./useResearchStorageSync";
 
@@ -25,7 +26,7 @@ function loadSubmissions() {
 }
 
 function saveSubmissions(submissions: ResearchSubmission[]) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(submissions));
+  writeLocalStorageValue(STORAGE_KEY, submissions);
 }
 
 export function useResearchSubmissions() {

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { researchTaskBlueprints } from "../data/researchTaskBlueprints";
+import { writeLocalStorageValue } from "../../../shared/utils/localStorageSync";
 import type {
   NewResearchProjectInput,
   ResearchProject,
@@ -59,7 +60,7 @@ function loadProjects() {
 }
 
 function saveProjects(projects: ResearchProject[]) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+  writeLocalStorageValue(STORAGE_KEY, projects);
 }
 
 function calculateDueDate(durationMonths: number) {

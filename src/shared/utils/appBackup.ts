@@ -61,6 +61,7 @@ import {
   LAST_CLOUD_SAVE_ERROR_KEY,
   LAST_CLOUD_SAVE_SYNC_AT_KEY,
 } from "../firebase/cloudSaveMetadata";
+import { GOOGLE_CALENDAR_EVENTS_STORAGE_KEY } from "../google/googleCalendarStorage";
 import { CLOUD_SAVE_QUEUE_KEY } from "../sync/syncQueue";
 import {
   LAST_SERVICE_SYNC_AT_KEY,
@@ -185,6 +186,7 @@ export const APP_STORAGE_KEYS: AppStorageKeyDefinition[] = [
   { key: "ssg2.planningCloudUserId", category: "dashboard", label: "Planning cloud user id" },
   { key: "ssg2.quickCaptures", category: "dashboard", label: "Dashboard quick captures" },
   { key: MANUAL_WORK_LOGS_STORAGE_KEY, category: "dashboard", label: "Manual work logs" },
+  { key: GOOGLE_CALENDAR_EVENTS_STORAGE_KEY, category: "dashboard", label: "Imported Google Calendar events" },
 
   { key: TIMER_SESSIONS_STORAGE_KEY, category: "timer", label: "Timer sessions" },
   { key: "ssg2.timerSyncEnabled", category: "timer", label: "Timer sync enabled" },

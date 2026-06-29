@@ -426,6 +426,19 @@ export type ResearchMindMapNodeInput = {
   pinned: boolean;
 };
 
+export type ResearchMindMapEdge = {
+  id: string;
+  projectId: string;
+  sourceNodeId?: string;
+  targetNodeId?: string;
+  sourceId?: string;
+  targetId?: string;
+  label?: string;
+  createdAt?: string;
+  updatedAt: string;
+  [key: string]: unknown;
+};
+
 export type ResearchSynthesisSectionStatus =
   | "idea"
   | "drafting"

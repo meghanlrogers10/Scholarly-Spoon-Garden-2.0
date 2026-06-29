@@ -24,6 +24,7 @@ export function getUserFirestorePaths(uid: string) {
     researchLiteratureNotes: `${userRoot}/researchLiteratureNotes`,
     researchReadingNotes: `${userRoot}/researchReadingNotes`,
     researchMindMapNodes: `${userRoot}/researchMindMapNodes`,
+    researchMindMapEdges: `${userRoot}/researchMindMapEdges`,
     researchSynthesisSections: `${userRoot}/researchSynthesisSections`,
     researchPrismaRecords: `${userRoot}/researchPrismaRecords`,
     researchPrismaCriteria: `${userRoot}/researchPrismaCriteria`,
@@ -233,6 +234,17 @@ export function getUserResearchMindMapNodeDocumentSegments(
   nodeId: string,
 ) {
   return ["users", uid, "researchMindMapNodes", nodeId] as const;
+}
+
+export function getUserResearchMindMapEdgesCollectionSegments(uid: string) {
+  return ["users", uid, "researchMindMapEdges"] as const;
+}
+
+export function getUserResearchMindMapEdgeDocumentSegments(
+  uid: string,
+  edgeId: string,
+) {
+  return ["users", uid, "researchMindMapEdges", edgeId] as const;
 }
 
 export function getUserResearchSynthesisSectionsCollectionSegments(uid: string) {

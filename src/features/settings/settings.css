@@ -130,6 +130,11 @@
   opacity: 0.68;
 }
 
+.settings-google-calendar-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
 .settings-calendar-apple-note {
   border: 1px solid rgba(83, 130, 94, 0.28);
   border-radius: 14px;

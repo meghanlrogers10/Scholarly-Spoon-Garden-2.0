@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { writeLocalStorageValue } from "../../../shared/utils/localStorageSync";
 import type { ResearchMindMapNode, ResearchMindMapNodeInput } from "../types";
 import { useResearchStorageSync } from "./useResearchStorageSync";
 
@@ -25,7 +26,7 @@ function loadNodes() {
 }
 
 function saveNodes(nodes: ResearchMindMapNode[]) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nodes));
+  writeLocalStorageValue(STORAGE_KEY, nodes);
 }
 
 function createNodeId(projectId: string) {

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { writeLocalStorageValue } from "../../../shared/utils/localStorageSync";
 import type {
   ResearchLogEntry,
   ResearchLogEntryInput,
@@ -153,7 +154,7 @@ function loadEntries() {
 }
 
 function saveEntries(entries: ResearchLogEntry[]) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  writeLocalStorageValue(STORAGE_KEY, entries);
 }
 
 function createEntryId(projectId: string) {
