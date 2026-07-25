@@ -32,7 +32,6 @@ import { ResearchProjectPage } from "../features/research/pages/ResearchProjectP
 import { ResearchLogPage } from "../features/research/pages/ResearchLogPage";
 import { ResearchDraftsPage } from "../features/research/pages/ResearchDraftsPage";
 import { ResearchSubmissionsPage } from "../features/research/pages/ResearchSubmissionsPage";
-import { ResearchLiteraturePage } from "../features/research/pages/ResearchLiteraturePage";
 import { TeachingCoursePage } from "../features/teaching/pages/TeachingCoursePage";
 import { TeachingNotebookPage } from "../features/teaching/pages/TeachingNotebookPage";
 import { ClassPrepPage } from "../features/teaching/pages/ClassPrepPage";
@@ -118,10 +117,6 @@ export function App() {
             <Route path="/research/:projectId" element={<ResearchProjectPage />} />
             <Route path="/research/:projectId/tasks" element={<ResearchTasksPage />} />
             <Route path="/research/:projectId/stages" element={<ResearchStagesPage />} />
-            <Route
-              path="/research/:projectId/literature"
-              element={<ResearchLiteraturePage />}
-            />
             <Route path="/research/:projectId/notes" element={<ResearchLogPage />} />
             <Route
               path="/research/:projectId/drafts"

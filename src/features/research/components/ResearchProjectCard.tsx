@@ -83,8 +83,6 @@ export function ResearchProjectCard({
         <span>
           {project.completedTaskCount}/{project.taskCount} tasks done
         </span>
-        <span>{project.literatureCount} sources</span>
-        <span>{project.notesCount} notes</span>
       </div>
 
       {canChangeFocus ? (

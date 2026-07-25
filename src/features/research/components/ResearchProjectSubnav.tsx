@@ -8,7 +8,6 @@ const navItems = [
   { label: "Overview", to: "" },
   { label: "Tasks", to: "tasks" },
   { label: "Stages", to: "stages" },
-  { label: "Literature", to: "literature" },
   { label: "Research Log", to: "notes" },
   { label: "Drafts", to: "drafts" },
   { label: "Submissions", to: "journals" },
