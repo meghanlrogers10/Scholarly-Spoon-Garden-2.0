@@ -10,6 +10,7 @@ import { TeachingMeetingModal } from "../components/TeachingMeetingModal";
 import { TeachingMeetingTable } from "../components/TeachingMeetingTable";
 import { useTeaching } from "../hooks/useTeaching";
 import type { NewTeachingMeetingInput, TeachingMeeting } from "../types";
+import { inferWeekdaysFromMeetingPattern } from "../utils/teachingSchedule";
 import "./teaching.css";
 
 const csvColumns = [
@@ -485,6 +486,9 @@ export function TeachingNotebookPage() {
         <GenerateScheduleModal
           onClose={() => setIsGenerateModalOpen(false)}
           onGenerate={handleGenerateSchedule}
+          initialStartDate={semester?.startDate}
+          initialEndDate={semester?.endDate}
+          initialWeekdays={inferWeekdaysFromMeetingPattern(course.meetingPattern)}
         />
       ) : null}
     </section>

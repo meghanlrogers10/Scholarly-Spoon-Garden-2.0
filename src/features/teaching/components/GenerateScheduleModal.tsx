@@ -19,15 +19,23 @@ export type GenerateScheduleInput = {
 type GenerateScheduleModalProps = {
   onClose: () => void;
   onGenerate: (input: GenerateScheduleInput) => void;
+  initialStartDate?: string;
+  initialEndDate?: string;
+  initialWeekdays?: number[];
 };
 
 export function GenerateScheduleModal({
   onClose,
   onGenerate,
+  initialStartDate = "",
+  initialEndDate = "",
+  initialWeekdays,
 }: GenerateScheduleModalProps) {
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [selectedWeekdays, setSelectedWeekdays] = useState<number[]>([1, 3]);
+  const [startDate, setStartDate] = useState(initialStartDate);
+  const [endDate, setEndDate] = useState(initialEndDate);
+  const [selectedWeekdays, setSelectedWeekdays] = useState<number[]>(
+    initialWeekdays?.length ? initialWeekdays : [1, 3],
+  );
   const [startingWeek, setStartingWeek] = useState(1);
   const [skipExistingDates, setSkipExistingDates] = useState(true);
   const [error, setError] = useState("");
@@ -83,7 +91,10 @@ export function GenerateScheduleModal({
           <div>
             <p className="eyebrow">Generate schedule</p>
             <h2>Create semester meeting rows</h2>
-            <p>Pick the date range and recurring weekdays for this course.</p>
+            <p>
+              Semester dates and course meeting days are filled in for you. Edit
+              them when this course has a different range or exceptions.
+            </p>
           </div>
           <button type="button" onClick={onClose} aria-label="Close modal">
             ×
