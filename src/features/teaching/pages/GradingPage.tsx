@@ -155,6 +155,8 @@ function csvEscape(value: string | undefined) {
 function createCsv(items: TeachingGradingItem[]) {
   const columns = [
     "assignment",
+    "taName",
+    "taId",
     "assignmentType",
     "dueDate",
     "status",
@@ -174,6 +176,10 @@ function createCsv(items: TeachingGradingItem[]) {
         return item.assignment;
       case "assignmentType":
         return item.assignmentType;
+      case "taName":
+        return item.taName;
+      case "taId":
+        return item.taId;
       case "dueDate":
         return item.dueDate;
       case "status":
@@ -228,6 +234,7 @@ export function GradingPage() {
     getGradingItemsForCourse,
     getAnnouncementRemindersForCourse,
     getTaItemsForCourse,
+    getTeachingAssistantsForCourse,
     createGradingItem,
     updateGradingItem,
     deleteGradingItem,
@@ -266,6 +273,9 @@ export function GradingPage() {
   const gradingItems = sortGradingItems(getGradingItemsForCourse(currentCourse.id));
   const announcementReminders = getAnnouncementRemindersForCourse(currentCourse.id);
   const taItems = getTaItemsForCourse(currentCourse.id);
+  const activeAssistants = getTeachingAssistantsForCourse(currentCourse.id).filter(
+    (assistant) => assistant.active,
+  );
   const normalizedSearch = searchTerm.trim().toLowerCase();
   const filteredItems = gradingItems.filter((item) => {
     const matchesFilter =
@@ -381,7 +391,14 @@ export function GradingPage() {
       }
 
       if (suggestion.targetType === "taItem") {
-        createTaItem(teachingSuggestionTaItemInput(suggestionItem, suggestion));
+        const taInput = teachingSuggestionTaItemInput(suggestionItem, suggestion);
+        const soleAssistant = activeAssistants.length === 1 ? activeAssistants[0] : undefined;
+
+        createTaItem({
+          ...taInput,
+          taId: soleAssistant?.id,
+          taName: soleAssistant?.name ?? taInput.taName,
+        });
         return;
       }
 

@@ -40,6 +40,11 @@ export function TaItemModal({
   onClose,
   onSave,
 }: TaItemModalProps) {
+  const defaultAssistant = item
+    ? assistants.find((assistant) => assistant.id === item.taId)
+    : assistants.length === 1
+      ? assistants[0]
+      : undefined;
   const [status, setStatus] = useState<TaStatus>(() => statusForItem(item));
   const [error, setError] = useState("");
 
@@ -121,7 +126,10 @@ export function TaItemModal({
           <div className="teaching-modal__row">
             <label>
               <span>TA profile</span>
-              <select name="taId" defaultValue={item?.taId ?? ""}>
+              <select
+                name="taId"
+                defaultValue={item?.taId ?? defaultAssistant?.id ?? ""}
+              >
                 <option value="">No linked TA profile</option>
                 {assistants.map((assistant) => (
                   <option key={assistant.id} value={assistant.id}>
@@ -132,7 +140,10 @@ export function TaItemModal({
             </label>
             <label>
               <span>TA name</span>
-              <input name="taName" defaultValue={item?.taName ?? ""} />
+              <input
+                name="taName"
+                defaultValue={item?.taName ?? defaultAssistant?.name ?? ""}
+              />
             </label>
           </div>
 

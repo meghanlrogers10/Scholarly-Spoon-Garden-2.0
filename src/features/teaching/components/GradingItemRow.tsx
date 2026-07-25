@@ -30,6 +30,7 @@ export function GradingItemRow({
         <strong>{item.assignment}</strong>
         {item.assignmentType ? <small>{item.assignmentType}</small> : null}
       </td>
+      <td>{item.taName || "Unassigned"}</td>
       <td>{item.dueDate || "No date"}</td>
       <td>
         <select
