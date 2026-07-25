@@ -566,7 +566,7 @@ export function requestCloudSaveSync() {
 }
 
 function isCloudSaveEnabled() {
-  return readJson(CLOUD_SAVE_ENABLED_KEY, false);
+  return readJson(CLOUD_SAVE_ENABLED_KEY, true);
 }
 
 export function canAttemptCloudSave(uid: string | null | undefined) {

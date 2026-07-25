@@ -89,7 +89,7 @@ export function ResearchSyncPanel({
   const [storedResearchPrismaCriteria, setStoredResearchPrismaCriteria] =
     useLocalStorage<unknown[]>(RESEARCH_PRISMA_CRITERIA_STORAGE_KEY, []);
   const [researchSyncEnabled, setResearchSyncEnabled] =
-    useLocalStorage<boolean>(RESEARCH_SYNC_ENABLED_KEY, false);
+    useLocalStorage<boolean>(RESEARCH_SYNC_ENABLED_KEY, true);
   const [lastResearchSyncAt, setLastResearchSyncAt] = useLocalStorage<string>(
     LAST_RESEARCH_SYNC_AT_KEY,
     "",

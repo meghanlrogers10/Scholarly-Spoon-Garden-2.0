@@ -252,7 +252,7 @@ export function CloudSaveControl({
   const { status: automaticStatus, queue } = useCloudSaveStatus();
   const [cloudSaveEnabled, setCloudSaveEnabled] = useLocalStorage<boolean>(
     CLOUD_SAVE_ENABLED_KEY,
-    false,
+    true,
   );
   const [lastCloudSaveSyncAt, setLastCloudSaveSyncAt] = useLocalStorage<string>(
     LAST_CLOUD_SAVE_SYNC_AT_KEY,

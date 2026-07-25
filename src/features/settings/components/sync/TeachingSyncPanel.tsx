@@ -88,7 +88,7 @@ export function TeachingSyncPanel({
   const [storedTeachingCourseTemplates, setStoredTeachingCourseTemplates] =
     useLocalStorage<unknown[]>(TEACHING_COURSE_TEMPLATES_STORAGE_KEY, []);
   const [teachingSyncEnabled, setTeachingSyncEnabled] =
-    useLocalStorage<boolean>(TEACHING_SYNC_ENABLED_KEY, false);
+    useLocalStorage<boolean>(TEACHING_SYNC_ENABLED_KEY, true);
   const [lastTeachingSyncAt, setLastTeachingSyncAt] = useLocalStorage<string>(
     LAST_TEACHING_SYNC_AT_KEY,
     "",

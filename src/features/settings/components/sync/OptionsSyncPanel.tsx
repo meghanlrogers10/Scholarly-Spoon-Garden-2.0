@@ -36,7 +36,7 @@ export function OptionsSyncPanel({
     defaultAppSettings,
   );
   const [settingsSyncEnabled, setSettingsSyncEnabled] =
-    useLocalStorage<boolean>(SETTINGS_SYNC_ENABLED_KEY, false);
+    useLocalStorage<boolean>(SETTINGS_SYNC_ENABLED_KEY, true);
   const [lastSettingsSyncAt, setLastSettingsSyncAt] = useLocalStorage<string>(
     LAST_SETTINGS_SYNC_AT_KEY,
     "",
