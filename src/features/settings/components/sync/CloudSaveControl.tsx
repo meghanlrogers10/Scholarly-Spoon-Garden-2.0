@@ -145,6 +145,7 @@ import {
   normalizeTeachingAnnouncementReminders,
   normalizeTeachingAssistants,
   normalizeTeachingCourseNotes,
+  normalizeTeachingCourseNoteDrafts,
   normalizeTeachingCourses,
   normalizeTeachingCourseTemplates,
   normalizeTeachingGradingItems,
@@ -155,6 +156,10 @@ import {
   normalizeTeachingSemesters,
   normalizeTeachingTaItems,
 } from "../../../../shared/firebase/teachingCloudService";
+import {
+  readLocalTeachingCourseNoteDrafts,
+  writeLocalTeachingCourseNoteDrafts,
+} from "../../../teaching/utils/teachingNoteDraftStorage";
 import {
   LAST_TEACHING_SYNC_AT_KEY,
   LAST_TEACHING_SYNC_ERROR_KEY,
@@ -658,6 +663,9 @@ export function CloudSaveControl({
         storedTeachingOfficeHourVisits,
       ),
       courseNotes: normalizeTeachingCourseNotes(storedTeachingCourseNotes),
+      courseNoteDrafts: normalizeTeachingCourseNoteDrafts(
+        readLocalTeachingCourseNoteDrafts(),
+      ),
       resources: normalizeTeachingResources(storedTeachingResources),
       announcementReminders: normalizeTeachingAnnouncementReminders(
         storedTeachingAnnouncementReminders,
@@ -679,12 +687,13 @@ export function CloudSaveControl({
     setStoredTeachingAssistants(mergeResult.teachingAssistants);
     setStoredTeachingOfficeHourVisits(mergeResult.officeHourVisits);
     setStoredTeachingCourseNotes(mergeResult.courseNotes);
+    writeLocalTeachingCourseNoteDrafts(mergeResult.courseNoteDrafts);
     setStoredTeachingResources(mergeResult.resources);
     setStoredTeachingAnnouncementReminders(mergeResult.announcementReminders);
     setStoredTeachingCourseTemplates(mergeResult.courseTemplates);
 
     const counts = getTeachingCounts(mergeResult);
-    return `Teaching merged. ${counts.semesters} semesters, ${counts.courses} courses, ${counts.gradingItems} grading items.`;
+    return `Teaching merged. ${counts.semesters} semesters, ${counts.courses} courses, ${counts.gradingItems} grading items, and ${counts.courseNoteDrafts} note drafts.`;
   }
 
   async function syncResearch(uid: string) {

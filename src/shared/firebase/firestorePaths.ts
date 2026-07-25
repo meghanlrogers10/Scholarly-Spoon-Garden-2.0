@@ -38,6 +38,7 @@ export function getUserFirestorePaths(uid: string) {
     teachingAssistants: `${userRoot}/teachingAssistants`,
     teachingOfficeHourVisits: `${userRoot}/teachingOfficeHourVisits`,
     teachingCourseNotes: `${userRoot}/teachingCourseNotes`,
+    teachingCourseNoteDrafts: `${userRoot}/teachingCourseNoteDrafts`,
     teachingResources: `${userRoot}/teachingResources`,
     teachingAnnouncementReminders: `${userRoot}/teachingAnnouncementReminders`,
     teachingCourseTemplates: `${userRoot}/teachingCourseTemplates`,
@@ -377,6 +378,17 @@ export function getUserTeachingCourseNoteDocumentSegments(
   noteId: string,
 ) {
   return ["users", uid, "teachingCourseNotes", noteId] as const;
+}
+
+export function getUserTeachingCourseNoteDraftsCollectionSegments(uid: string) {
+  return ["users", uid, "teachingCourseNoteDrafts"] as const;
+}
+
+export function getUserTeachingCourseNoteDraftDocumentSegments(
+  uid: string,
+  draftId: string,
+) {
+  return ["users", uid, "teachingCourseNoteDrafts", draftId] as const;
 }
 
 export function getUserTeachingResourcesCollectionSegments(uid: string) {

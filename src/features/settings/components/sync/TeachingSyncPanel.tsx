@@ -22,6 +22,7 @@ import {
   normalizeTeachingAnnouncementReminders,
   normalizeTeachingAssistants,
   normalizeTeachingCourseNotes,
+  normalizeTeachingCourseNoteDrafts,
   normalizeTeachingCourses,
   normalizeTeachingCourseTemplates,
   normalizeTeachingGradingItems,
@@ -32,9 +33,12 @@ import {
   normalizeTeachingSemesters,
   normalizeTeachingTaItems,
   pushMergedUserTeachingData,
-  TEACHING_NOTE_DRAFT_SYNC_NOTE,
   type TeachingCloudCounts,
 } from "../../../../shared/firebase/teachingCloudService";
+import {
+  readLocalTeachingCourseNoteDrafts,
+  writeLocalTeachingCourseNoteDrafts,
+} from "../../../teaching/utils/teachingNoteDraftStorage";
 import {
   LAST_TEACHING_SYNC_AT_KEY,
   LAST_TEACHING_SYNC_ERROR_KEY,
@@ -121,6 +125,9 @@ export function TeachingSyncPanel({
       storedTeachingOfficeHourVisits,
     ),
     courseNotes: normalizeTeachingCourseNotes(storedTeachingCourseNotes),
+    courseNoteDrafts: normalizeTeachingCourseNoteDrafts(
+      readLocalTeachingCourseNoteDrafts(),
+    ),
     resources: normalizeTeachingResources(storedTeachingResources),
     announcementReminders: normalizeTeachingAnnouncementReminders(
       storedTeachingAnnouncementReminders,
@@ -166,6 +173,7 @@ export function TeachingSyncPanel({
     setStoredTeachingAssistants(snapshot.teachingAssistants);
     setStoredTeachingOfficeHourVisits(snapshot.officeHourVisits);
     setStoredTeachingCourseNotes(snapshot.courseNotes);
+    writeLocalTeachingCourseNoteDrafts(snapshot.courseNoteDrafts);
     setStoredTeachingResources(snapshot.resources);
     setStoredTeachingAnnouncementReminders(snapshot.announcementReminders);
     setStoredTeachingCourseTemplates(snapshot.courseTemplates);
@@ -183,7 +191,7 @@ export function TeachingSyncPanel({
       setCloudTeachingCounts(counts);
       setTeachingSyncStatus({
         tone: "success",
-        message: `Cloud has ${counts.semesters} semesters, ${counts.courses} courses, ${counts.meetings} meetings, ${counts.prepSessions} prep sessions, ${counts.gradingItems} grading items, ${counts.taItems} TA items, ${counts.teachingAssistants} teaching assistants, ${counts.officeHourVisits} office-hour visits, ${counts.courseNotes} notes, ${counts.resources} resources, ${counts.announcementReminders} announcements, and ${counts.courseTemplates} templates.`,
+        message: `Cloud has ${counts.semesters} semesters, ${counts.courses} courses, ${counts.meetings} meetings, ${counts.prepSessions} prep sessions, ${counts.gradingItems} grading items, ${counts.taItems} TA items, ${counts.teachingAssistants} teaching assistants, ${counts.officeHourVisits} office-hour visits, ${counts.courseNotes} notes, ${counts.courseNoteDrafts} note drafts, ${counts.resources} resources, ${counts.announcementReminders} announcements, and ${counts.courseTemplates} templates.`,
       });
     } catch (error) {
       recordTeachingSyncError(error);
@@ -252,7 +260,7 @@ export function TeachingSyncPanel({
     <SyncPanel
       eyebrow="Teaching"
       title="Manual Teaching cloud sync"
-      description="Only Teaching semesters, courses, class meetings, prep, grading, TA, office-hour, note, resource, announcement, and template records use this path. Teaching pages still read and write localStorage first."
+      description="Teaching pages and their nested course workspaces use this path for semesters, courses, class meetings, prep, grading, TA, office-hour, note, note-draft, resource, announcement, and template records."
       statusLabel={teachingSyncEnabled ? "Teaching sync enabled" : "Manual opt-in"}
     >
       <div className="settings-backup-summary">
@@ -265,12 +273,13 @@ export function TeachingSyncPanel({
         <span>{localTeachingCounts.teachingAssistants} local teaching assistants</span>
         <span>{localTeachingCounts.officeHourVisits} local office-hour visits</span>
         <span>{localTeachingCounts.courseNotes} local notes</span>
+        <span>{localTeachingCounts.courseNoteDrafts} local note drafts</span>
         <span>{localTeachingCounts.resources} local resources</span>
         <span>{localTeachingCounts.announcementReminders} local announcements</span>
         <span>{localTeachingCounts.courseTemplates} local templates</span>
         <span>
           {cloudTeachingCounts
-            ? `${cloudTeachingCounts.semesters}/${cloudTeachingCounts.courses}/${cloudTeachingCounts.meetings}/${cloudTeachingCounts.prepSessions}/${cloudTeachingCounts.gradingItems}/${cloudTeachingCounts.taItems}/${cloudTeachingCounts.teachingAssistants}/${cloudTeachingCounts.officeHourVisits}/${cloudTeachingCounts.courseNotes}/${cloudTeachingCounts.resources}/${cloudTeachingCounts.announcementReminders}/${cloudTeachingCounts.courseTemplates} cloud`
+            ? `${cloudTeachingCounts.semesters}/${cloudTeachingCounts.courses}/${cloudTeachingCounts.meetings}/${cloudTeachingCounts.prepSessions}/${cloudTeachingCounts.gradingItems}/${cloudTeachingCounts.taItems}/${cloudTeachingCounts.teachingAssistants}/${cloudTeachingCounts.officeHourVisits}/${cloudTeachingCounts.courseNotes}/${cloudTeachingCounts.courseNoteDrafts}/${cloudTeachingCounts.resources}/${cloudTeachingCounts.announcementReminders}/${cloudTeachingCounts.courseTemplates} cloud`
             : "Cloud count not checked"}
         </span>
         <span>
@@ -380,6 +389,7 @@ export function TeachingSyncPanel({
         <code>users/{"{uid}"}/teachingAssistants/{"{assistantId}"}</code>,{" "}
         <code>users/{"{uid}"}/teachingOfficeHourVisits/{"{visitId}"}</code>,{" "}
         <code>users/{"{uid}"}/teachingCourseNotes/{"{noteId}"}</code>,{" "}
+        <code>users/{"{uid}"}/teachingCourseNoteDrafts/{"{draftId}"}</code>,{" "}
         <code>users/{"{uid}"}/teachingResources/{"{resourceId}"}</code>,{" "}
         <code>
           users/{"{uid}"}/teachingAnnouncementReminders/{"{reminderId}"}
@@ -407,7 +417,8 @@ export function TeachingSyncPanel({
         <code>{TEACHING_TA_ITEMS_STORAGE_KEY}</code>,{" "}
         <code>{TEACHING_ASSISTANTS_STORAGE_KEY}</code>,{" "}
         <code>{TEACHING_OFFICE_HOUR_VISITS_STORAGE_KEY}</code>,{" "}
-        <code>{TEACHING_COURSE_NOTES_STORAGE_KEY}</code>,{" "}
+        <code>{TEACHING_COURSE_NOTES_STORAGE_KEY}</code>, note-draft keys under{" "}
+        <code>ssg2.teachingCourseNoteDraft.</code>,{" "}
         <code>{TEACHING_RESOURCES_STORAGE_KEY}</code>,{" "}
         <code>{TEACHING_ANNOUNCEMENT_REMINDERS_STORAGE_KEY}</code>, and{" "}
         <code>{TEACHING_COURSE_TEMPLATES_STORAGE_KEY}</code>.
@@ -421,7 +432,6 @@ export function TeachingSyncPanel({
         from cloud are not deleted.
       </p>
 
-      <p className="muted-text">{TEACHING_NOTE_DRAFT_SYNC_NOTE}</p>
     </SyncPanel>
   );
 }

@@ -347,6 +347,19 @@ export type TeachingCourseNote = {
   updatedAt: string;
 };
 
+export type TeachingCourseNoteDraft = {
+  id: string;
+  courseId: string;
+  noteId?: string;
+  title: string;
+  body: string;
+  tags: string[];
+  noteType: TeachingCourseNoteType;
+  savedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type TeachingResource = {
   id: string;
   courseId: string;
