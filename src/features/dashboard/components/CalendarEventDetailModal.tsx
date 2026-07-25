@@ -30,6 +30,7 @@ const sourceIconMap: Record<CalendarSource, string> = {
   task: "📌",
   "working-block": "🕰️",
   "planned-task": "🧩",
+  "teaching-meeting": "🎓",
   "external-google": "G",
 };
 
@@ -45,6 +46,7 @@ function getSourceLabel(source: CalendarSource) {
   if (source === "task") return "Due-date task";
   if (source === "working-block") return "Working block";
   if (source === "planned-task") return "Planned task block";
+  if (source === "teaching-meeting") return "Scheduled teaching";
   if (source === "external-google") return "Google Calendar event";
   return "Manual work log";
 }
@@ -55,7 +57,9 @@ function getTimingLabel(item: CalendarItem) {
   }
 
   if (
-    (item.source === "working-block" || item.source === "planned-task") &&
+    (item.source === "working-block" ||
+      item.source === "planned-task" ||
+      item.source === "teaching-meeting") &&
     item.time &&
     item.endTime
   ) {
@@ -150,6 +154,8 @@ export function CalendarEventDetailModal({
                   ? item.workingBlockStatus ?? "planned"
                   : item.source === "planned-task"
                     ? item.plannedTaskBlockStatus ?? "planned"
+                  : item.source === "teaching-meeting"
+                    ? "Scheduled teaching; counted as work unless canceled"
                   : item.source === "external-google"
                     ? "Read-only imported busy time"
                   : item.completed
@@ -188,6 +194,13 @@ export function CalendarEventDetailModal({
                   <dd>{item.spoonCost ? `${item.spoonCost} spoons` : "Not set"}</dd>
                 </div>
               </>
+            ) : null}
+
+            {item.source === "teaching-meeting" ? (
+              <div>
+                <dt>Work count</dt>
+                <dd>Included as scheduled teaching time</dd>
+              </div>
             ) : null}
 
             {item.source === "timed" ||
@@ -304,6 +317,8 @@ export function CalendarEventDetailModal({
                 ? "Working blocks are planned availability containers. Edit Daily Check-In changes this block; task assignment happens in Today's Work Blocks above the calendar."
                 : item.source === "planned-task"
                   ? "Planned task blocks are intentions inside available time. Actual work comes later."
+                  : item.source === "teaching-meeting"
+                    ? "This scheduled class is read from Teaching. Mark the meeting canceled there to remove it from the calendar and work count."
                   : item.source === "external-google"
                     ? "This is read-only Google Calendar busy time. It will not become a task, work block, or work log."
                   : "Editing and deletion controls come next. For now, this confirms the calendar knows what each item is."}
@@ -350,6 +365,7 @@ export function CalendarEventDetailModal({
   {item.source !== "task" &&
     item.source !== "working-block" &&
     item.source !== "planned-task" &&
+    item.source !== "teaching-meeting" &&
     item.source !== "external-google" &&
     onDeleteItem && (
     <Button type="button" variant="soft" onClick={() => onDeleteItem(item)}>

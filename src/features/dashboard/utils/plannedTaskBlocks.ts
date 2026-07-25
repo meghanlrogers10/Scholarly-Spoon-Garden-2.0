@@ -16,6 +16,7 @@ import {
   formatWorkingBlockTimeRange,
   getWorkingBlockDurationMinutes,
 } from "./workingBlockCalendar";
+import { isTeachingWorkingBlock } from "./teachingScheduleBlocks";
 
 export function getPlannedBlocksForWorkingBlock(
   blockId: string,
@@ -46,6 +47,10 @@ export function getWorkingBlockRemainingMinutes(
   block: WorkingBlock,
   plannedBlocks: PlannedTaskBlock[],
 ) {
+  if (isTeachingWorkingBlock(block)) {
+    return 0;
+  }
+
   return (
     getWorkingBlockCapacityMinutes(block) -
     getWorkingBlockPlannedMinutes(block, plannedBlocks)
@@ -133,7 +138,9 @@ export function getDayRemainingMinutes(
   plannedBlocks: PlannedTaskBlock[],
 ) {
   const availableMinutes = workingBlocks.reduce(
-    (totalMinutes, block) => totalMinutes + getWorkingBlockCapacityMinutes(block),
+    (totalMinutes, block) =>
+      totalMinutes +
+      (isTeachingWorkingBlock(block) ? 0 : getWorkingBlockCapacityMinutes(block)),
     0,
   );
 

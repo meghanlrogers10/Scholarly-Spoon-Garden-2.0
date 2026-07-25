@@ -9,6 +9,7 @@ import {
   getDayRemainingMinutes,
   getWorkingBlockCapacityMinutes,
 } from "../utils/plannedTaskBlocks";
+import { getTeachingMinutes, isTeachingWorkingBlock } from "../utils/teachingScheduleBlocks";
 import { formatWorkingBlockDuration } from "../utils/workingBlockCalendar";
 
 type TodayControlStripProps = {
@@ -52,9 +53,12 @@ export function TodayControlStrip({
 }: TodayControlStripProps) {
   const workingBlocks = checkIn?.workingBlocks ?? [];
   const availableMinutes = workingBlocks.reduce(
-    (totalMinutes, block) => totalMinutes + getWorkingBlockCapacityMinutes(block),
+    (totalMinutes, block) =>
+      totalMinutes +
+      (isTeachingWorkingBlock(block) ? 0 : getWorkingBlockCapacityMinutes(block)),
     0,
   );
+  const teachingMinutes = getTeachingMinutes(workingBlocks);
   const plannedMinutes = getDayPlannedMinutes(plannedBlocks);
   const remainingMinutes = checkIn
     ? getDayRemainingMinutes(workingBlocks, plannedBlocks)
@@ -86,6 +90,12 @@ export function TodayControlStrip({
           <strong>{formatWorkingBlockDuration(availableMinutes)}</strong>
           available
         </span>
+        {teachingMinutes > 0 ? (
+          <span>
+            <strong>{formatWorkingBlockDuration(teachingMinutes)}</strong>
+            teaching
+          </span>
+        ) : null}
         <span>
           <strong>{formatWorkingBlockDuration(plannedMinutes)}</strong>
           planned

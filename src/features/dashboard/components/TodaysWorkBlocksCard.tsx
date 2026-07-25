@@ -21,6 +21,7 @@ import {
   formatWorkingBlockTimeRange,
 } from "../utils/workingBlockCalendar";
 import { getTaskEstimateMinutes } from "../utils/todayBuilder";
+import { isTeachingWorkingBlock } from "../utils/teachingScheduleBlocks";
 
 type TodaysWorkBlocksCardProps = {
   checkIn?: DailyCheckIn;
@@ -228,6 +229,7 @@ export function TodaysWorkBlocksCard({
             const selectedTaskId =
               selectedTaskByBlockId[block.id] ?? availableTasks[0]?.id ?? "";
             const isOverCapacity = plannedMinutes > capacityMinutes;
+            const isTeaching = isTeachingWorkingBlock(block);
 
             return (
               <section
@@ -238,10 +240,13 @@ export function TodaysWorkBlocksCard({
               >
                 <div className="work-block-card-header">
                   <div>
-                    <p className="work-block-kicker">Available time</p>
+                    <p className="work-block-kicker">
+                      {isTeaching ? "Teaching time" : "Available time"}
+                    </p>
                     <h3>{formatWorkingBlockTimeRange(block)}</h3>
                     <p className="muted-text">
-                      {formatWorkingBlockDuration(capacityMinutes)} available
+                      {formatWorkingBlockDuration(capacityMinutes)}{" "}
+                      {isTeaching ? "scheduled" : "available"}
                     </p>
                   </div>
 
@@ -290,7 +295,7 @@ export function TodaysWorkBlocksCard({
                   )}
                 </div>
 
-                <div className="work-block-add-task">
+                {!isTeaching ? <div className="work-block-add-task">
                   {availableTasks.length === 0 ? (
                     <p className="muted-text">No open tasks available.</p>
                   ) : (
@@ -325,7 +330,7 @@ export function TodaysWorkBlocksCard({
                       </Button>
                     </>
                   )}
-                </div>
+                </div> : null}
               </section>
             );
           })}

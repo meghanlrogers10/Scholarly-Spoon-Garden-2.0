@@ -159,6 +159,7 @@ export function normalizeWorkingBlock(
     plannedTaskIds: optionalStringArray(value.plannedTaskIds),
     actualSessionIds: optionalStringArray(value.actualSessionIds),
     notes: asString(value.notes),
+    source: value.source === "teaching-meeting" ? "teaching-meeting" : undefined,
   };
 }
 

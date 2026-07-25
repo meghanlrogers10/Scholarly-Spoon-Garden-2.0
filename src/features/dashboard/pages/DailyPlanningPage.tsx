@@ -30,6 +30,12 @@ import {
 } from "../utils/plannedTaskBlocks";
 import { getTaskEstimateMinutes } from "../utils/todayBuilder";
 import { getNextUpcomingWorkingBlock } from "../utils/workingBlockCalendar";
+import {
+  getEffectiveDailyCheckIn,
+  isTeachingWorkingBlock,
+  mergeTeachingWorkingBlocks,
+} from "../utils/teachingScheduleBlocks";
+import { useTeaching } from "../../teaching/hooks/useTeaching";
 import type { PlanningMode } from "../../../shared/types/planning";
 
 function getTomorrowDateKey(date: string) {
@@ -41,6 +47,7 @@ function getTomorrowDateKey(date: string) {
 
 export function DailyPlanningPage() {
   const { settings } = useAppSettings();
+  const { courses, meetings } = useTeaching();
   const [isDailyCheckInOpen, setIsDailyCheckInOpen] = useState(false);
   const [isManualWorkLogOpen, setIsManualWorkLogOpen] = useState(false);
   const [isEndOfDayReviewOpen, setIsEndOfDayReviewOpen] = useState(false);
@@ -81,27 +88,38 @@ export function DailyPlanningPage() {
   );
   const todayReview = getReviewForDate(todayDate);
   const todayPlannedBlocks = getPlannedBlocksForDate(todayDate);
+  const effectiveTodayCheckIn = useMemo(
+    () =>
+      getEffectiveDailyCheckIn(
+        todayCheckIn,
+        todayDate,
+        meetings,
+        courses,
+        settings.defaultPlanningMode ?? "balanced",
+      ),
+    [courses, meetings, settings.defaultPlanningMode, todayCheckIn, todayDate],
+  );
   const suggestionResult = useMemo(
     () =>
       buildBlockSuggestions({
         tasks: allTasks,
-        dailyCheckIn: todayCheckIn,
-        workingBlocks: todayCheckIn?.workingBlocks ?? [],
+        dailyCheckIn: effectiveTodayCheckIn,
+        workingBlocks: effectiveTodayCheckIn?.workingBlocks ?? [],
         plannedBlocks: todayPlannedBlocks,
         planningMode:
-          todayCheckIn?.planningMode ?? settings.defaultPlanningMode ?? "balanced",
+          effectiveTodayCheckIn?.planningMode ?? settings.defaultPlanningMode ?? "balanced",
         date: todayDate,
       }),
     [
       allTasks,
       settings.defaultPlanningMode,
-      todayCheckIn,
+      effectiveTodayCheckIn,
       todayDate,
       todayPlannedBlocks,
     ],
   );
-  const nextWorkingBlock = todayCheckIn
-    ? getNextUpcomingWorkingBlock(todayCheckIn.workingBlocks)
+  const nextWorkingBlock = effectiveTodayCheckIn
+    ? getNextUpcomingWorkingBlock(effectiveTodayCheckIn.workingBlocks)
     : undefined;
   const nextBlockPlan =
     suggestionResult.blockPlans.find((plan) => plan.block.id === nextWorkingBlock?.id) ??
@@ -110,20 +128,28 @@ export function DailyPlanningPage() {
   function handleSaveTodayCheckIn(
     input: Parameters<typeof saveTodayCheckIn>[0],
   ) {
-    saveTodayCheckIn(input);
+    saveTodayCheckIn({
+      ...input,
+      workingBlocks: mergeTeachingWorkingBlocks(
+        input.workingBlocks,
+        meetings,
+        courses,
+        todayDate,
+      ),
+    });
     ensureShutdownReviewTask(todayDate, Boolean(todayReview));
   }
 
   function handlePlanningModeChange(mode: PlanningMode) {
     handleSaveTodayCheckIn({
-      availableSpoons: todayCheckIn?.availableSpoons ?? 3,
+      availableSpoons: effectiveTodayCheckIn?.availableSpoons ?? 3,
       planningMode: mode,
-      workingBlocks: todayCheckIn?.workingBlocks ?? [],
-      avoidNotes: todayCheckIn?.avoidNotes,
-      protectNotes: todayCheckIn?.protectNotes,
-      preferLowEnergyTasks: todayCheckIn?.preferLowEnergyTasks,
-      avoidHighEmotionTasks: todayCheckIn?.avoidHighEmotionTasks,
-      hardStopTime: todayCheckIn?.hardStopTime,
+      workingBlocks: effectiveTodayCheckIn?.workingBlocks ?? [],
+      avoidNotes: effectiveTodayCheckIn?.avoidNotes,
+      protectNotes: effectiveTodayCheckIn?.protectNotes,
+      preferLowEnergyTasks: effectiveTodayCheckIn?.preferLowEnergyTasks,
+      avoidHighEmotionTasks: effectiveTodayCheckIn?.avoidHighEmotionTasks,
+      hardStopTime: effectiveTodayCheckIn?.hardStopTime,
     });
   }
 
@@ -134,6 +160,14 @@ export function DailyPlanningPage() {
   }
 
   function handlePlanTaskInBlock(taskId: string, workingBlockId: string) {
+    if (
+      effectiveTodayCheckIn?.workingBlocks.some(
+        (block) => block.id === workingBlockId && isTeachingWorkingBlock(block),
+      )
+    ) {
+      return;
+    }
+
     if (
       todayPlannedBlocks.some(
         (block) =>
@@ -154,7 +188,7 @@ export function DailyPlanningPage() {
   }
 
   function handleUseTodayBuilderPlan(taskIds: string[]) {
-    const todayWorkingBlocks = todayCheckIn?.workingBlocks ?? [];
+    const todayWorkingBlocks = effectiveTodayCheckIn?.workingBlocks ?? [];
     const nextPlannedBlocks: PlannedTaskBlock[] = [];
     const nextPlannedTaskInputs: PlannedTaskBlock[] = [];
 
@@ -266,7 +300,7 @@ export function DailyPlanningPage() {
       </header>
 
       <TodayControlStrip
-        checkIn={todayCheckIn}
+        checkIn={effectiveTodayCheckIn}
         plannedBlocks={todayPlannedBlocks}
         onModeChange={handlePlanningModeChange}
         onOpenDailyPlan={handleFocusSuggestions}
@@ -277,7 +311,7 @@ export function DailyPlanningPage() {
 
       <div className="daily-planning-grid">
         <DailyCheckInSummaryCard
-          checkIn={todayCheckIn}
+          checkIn={effectiveTodayCheckIn}
           plannedBlocks={todayPlannedBlocks}
           timerSessions={timerSessions}
           manualWorkLogs={manualWorkLogs}
@@ -364,7 +398,7 @@ export function DailyPlanningPage() {
       />
 
       <TodaysWorkBlocksCard
-        checkIn={todayCheckIn}
+        checkIn={effectiveTodayCheckIn}
         tasks={allTasks}
         plannedBlocks={todayPlannedBlocks}
         timerSessions={timerSessions}
@@ -379,7 +413,7 @@ export function DailyPlanningPage() {
 
       <TodayBuilderCard
         tasks={allTasks}
-        checkIn={todayCheckIn}
+        checkIn={effectiveTodayCheckIn}
         plannedBlocks={todayPlannedBlocks}
         defaultPlanningMode={settings.defaultPlanningMode}
         lowEnergyModeDefault={settings.lowEnergyModeDefault}
@@ -399,7 +433,7 @@ export function DailyPlanningPage() {
 
       {isDailyCheckInOpen ? (
         <DailyCheckInModal
-          checkIn={todayCheckIn}
+          checkIn={effectiveTodayCheckIn}
           todayDate={todayDate}
           defaultPlanningMode={settings.defaultPlanningMode}
           defaultStartHour={settings.calendarDayStartHour}
@@ -413,7 +447,7 @@ export function DailyPlanningPage() {
       <ManualWorkLogModal
         isOpen={isManualWorkLogOpen}
         tasks={allTasks}
-        workingBlocks={todayCheckIn?.workingBlocks ?? []}
+        workingBlocks={effectiveTodayCheckIn?.workingBlocks ?? []}
         plannedBlocks={todayPlannedBlocks}
         onClose={() => setIsManualWorkLogOpen(false)}
         onSave={handleSaveManualWorkLog}
@@ -423,7 +457,7 @@ export function DailyPlanningPage() {
         isOpen={isEndOfDayReviewOpen}
         date={todayDate}
         review={todayReview}
-        checkIn={todayCheckIn}
+        checkIn={effectiveTodayCheckIn}
         tasks={allTasks}
         plannedBlocks={plannedBlocks}
         timerSessions={timerSessions}

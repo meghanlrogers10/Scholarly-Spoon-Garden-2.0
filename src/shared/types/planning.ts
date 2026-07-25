@@ -25,6 +25,7 @@ export type WorkingBlock = {
   plannedTaskIds?: string[];
   actualSessionIds?: string[];
   notes?: string;
+  source?: "teaching-meeting";
 };
 
 export type DailyCheckIn = {

@@ -18,6 +18,7 @@ import {
   getDayPlannedMinutes,
   getDayRemainingMinutes,
 } from "../utils/plannedTaskBlocks";
+import { getTeachingMinutes } from "../utils/teachingScheduleBlocks";
 
 type DailyCheckInSummaryCardProps = {
   checkIn?: DailyCheckIn;
@@ -51,6 +52,7 @@ export function DailyCheckInSummaryCard({
   onEdit,
 }: DailyCheckInSummaryCardProps) {
   const totalBlockMinutes = checkIn ? getBlockDurationMinutes(checkIn) : 0;
+  const teachingMinutes = checkIn ? getTeachingMinutes(checkIn.workingBlocks) : 0;
   const nextBlock = checkIn
     ? getNextUpcomingWorkingBlock(checkIn.workingBlocks)
     : undefined;
@@ -96,13 +98,19 @@ export function DailyCheckInSummaryCard({
             {planningModeLabels[checkIn.planningMode]} ·{" "}
             {checkIn.workingBlocks.length} blocks
             {totalBlockMinutes > 0
-              ? ` · ${formatWorkingBlockDuration(totalBlockMinutes)} available`
+              ? ` · ${formatWorkingBlockDuration(totalBlockMinutes)} scheduled`
+              : ""}
+            {teachingMinutes > 0
+              ? ` · ${formatWorkingBlockDuration(teachingMinutes)} teaching`
               : ""}
             {plannedBlocks.length > 0
               ? ` · ${formatWorkingBlockDuration(plannedMinutes)} planned · ${formatWorkingBlockDuration(Math.max(remainingMinutes, 0))} open · ${plannedBlocks.length} planned tasks`
               : ""}
             {actualMinutes > 0
               ? ` · ${formatWorkingBlockDuration(actualMinutes)} actual`
+              : ""}
+            {actualMinutes + teachingMinutes > 0
+              ? ` · ${formatWorkingBlockDuration(actualMinutes + teachingMinutes)} work count`
               : ""}
             {nextBlock
               ? ` · next block ${formatWorkingBlockTimeRange(nextBlock)}`

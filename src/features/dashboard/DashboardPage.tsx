@@ -44,6 +44,14 @@ import {
   isShutdownReviewTask,
 } from "./utils/shutdownReviewTask";
 import { mapWorkingBlocksToCalendarEvents } from "./utils/workingBlockCalendar";
+import {
+  getEffectiveDailyCheckIn,
+  getTeachingMinutes,
+  isTeachingWorkingBlock,
+  mapTeachingMeetingsToCalendarEvents,
+  mergeTeachingWorkingBlocks,
+} from "./utils/teachingScheduleBlocks";
+import { useTeaching } from "../teaching/hooks/useTeaching";
 import type {
   DailyCheckIn,
   PlannedTaskBlock,
@@ -197,6 +205,7 @@ export function DashboardPage() {
   const [hasAutoOpenedDailyCheckIn, setHasAutoOpenedDailyCheckIn] =
     useState(false);
   const { settings } = useAppSettings();
+  const { courses, meetings } = useTeaching();
   const {
     todayDate,
     todayCheckIn,
@@ -247,6 +256,20 @@ export function DashboardPage() {
     );
   const todayReview = getReviewForDate(todayDate);
   const todayPlannedBlocks = getPlannedBlocksForDate(todayDate);
+  const effectiveTodayCheckIn = getEffectiveDailyCheckIn(
+    todayCheckIn,
+    todayDate,
+    meetings,
+    courses,
+    settings.defaultPlanningMode ?? "balanced",
+  );
+  const effectiveCheckIns = todayCheckIn
+    ? checkIns.map((checkIn) =>
+        checkIn.date === todayDate ? effectiveTodayCheckIn ?? checkIn : checkIn,
+      )
+    : effectiveTodayCheckIn
+      ? [...checkIns, effectiveTodayCheckIn]
+      : checkIns;
   const shutdownReviewTask = findShutdownReviewTask(allTasks, todayDate);
   const isShutdownReviewDone = Boolean(todayReview) || shutdownReviewTask?.status === "done";
   const [clockMinute, setClockMinute] = useState(() => getCurrentMinutes());
@@ -378,13 +401,19 @@ export function DashboardPage() {
     }));
 
   const allWorkingBlocks = enrichWorkingBlocksForCalendar(
-    checkIns.flatMap((checkIn) => checkIn.workingBlocks),
+    effectiveCheckIns.flatMap((checkIn) => checkIn.workingBlocks),
     plannedBlocks,
     timerSessions,
     manualWorkLogs,
   );
   const workingBlockCalendarItems =
-    mapWorkingBlocksToCalendarEvents(allWorkingBlocks);
+    mapWorkingBlocksToCalendarEvents(
+      allWorkingBlocks.filter((block) => !isTeachingWorkingBlock(block)),
+    );
+  const teachingCalendarItems = mapTeachingMeetingsToCalendarEvents(
+    meetings,
+    courses,
+  );
   const plannedTaskCalendarItems = mapPlannedTaskBlocksToCalendarEvents(
     plannedBlocks,
     allWorkingBlocks,
@@ -395,6 +424,7 @@ export function DashboardPage() {
   const dashboardCalendarItems: CalendarItem[] = [
     ...taskCalendarItems,
     ...workingBlockCalendarItems,
+    ...teachingCalendarItems,
     ...plannedTaskCalendarItems,
     ...googleCalendarItems,
     ...timerCalendarItems,
@@ -493,7 +523,15 @@ export function DashboardPage() {
   function handleSaveTodayCheckIn(
     input: Parameters<typeof saveTodayCheckIn>[0],
   ) {
-    saveTodayCheckIn(input);
+    saveTodayCheckIn({
+      ...input,
+      workingBlocks: mergeTeachingWorkingBlocks(
+        input.workingBlocks,
+        meetings,
+        courses,
+        todayDate,
+      ),
+    });
     ensureShutdownReviewTask(todayDate, Boolean(todayReview));
   }
 
@@ -509,7 +547,7 @@ export function DashboardPage() {
   }
 
   function handlePlanningModeChange(mode: PlanningMode) {
-    if (!todayCheckIn) {
+    if (!effectiveTodayCheckIn) {
       handleSaveTodayCheckIn({
         availableSpoons: 3,
         planningMode: mode,
@@ -519,14 +557,14 @@ export function DashboardPage() {
     }
 
     handleSaveTodayCheckIn({
-      availableSpoons: todayCheckIn.availableSpoons,
+      availableSpoons: effectiveTodayCheckIn.availableSpoons,
       planningMode: mode,
-      workingBlocks: todayCheckIn.workingBlocks,
-      avoidNotes: todayCheckIn.avoidNotes,
-      protectNotes: todayCheckIn.protectNotes,
-      preferLowEnergyTasks: todayCheckIn.preferLowEnergyTasks,
-      avoidHighEmotionTasks: todayCheckIn.avoidHighEmotionTasks,
-      hardStopTime: todayCheckIn.hardStopTime,
+      workingBlocks: effectiveTodayCheckIn.workingBlocks,
+      avoidNotes: effectiveTodayCheckIn.avoidNotes,
+      protectNotes: effectiveTodayCheckIn.protectNotes,
+      preferLowEnergyTasks: effectiveTodayCheckIn.preferLowEnergyTasks,
+      avoidHighEmotionTasks: effectiveTodayCheckIn.avoidHighEmotionTasks,
+      hardStopTime: effectiveTodayCheckIn.hardStopTime,
     });
   }
 
@@ -582,7 +620,7 @@ export function DashboardPage() {
 
       <main id="main-container">
         <TodayControlStrip
-          checkIn={todayCheckIn}
+          checkIn={effectiveTodayCheckIn}
           plannedBlocks={todayPlannedBlocks}
           onModeChange={handlePlanningModeChange}
           onOpenDailyPlan={handleOpenDailyPlan}
@@ -630,6 +668,10 @@ export function DashboardPage() {
           <WorkingSessionsCard
             sessions={timerSessions}
             manualWorkLogs={manualWorkLogs}
+            teachingMinutes={getTeachingMinutes(effectiveTodayCheckIn?.workingBlocks ?? [])}
+            teachingCount={
+              effectiveTodayCheckIn?.workingBlocks.filter(isTeachingWorkingBlock).length ?? 0
+            }
           />
 
           <QuickCaptureCard onSave={saveCapture} />
@@ -652,7 +694,7 @@ export function DashboardPage() {
 
       {isDailyCheckInOpen ? (
         <DailyCheckInModal
-          checkIn={todayCheckIn}
+          checkIn={effectiveTodayCheckIn}
           todayDate={todayDate}
           defaultPlanningMode={settings.defaultPlanningMode}
           defaultStartHour={settings.calendarDayStartHour}
@@ -666,7 +708,7 @@ export function DashboardPage() {
       <ManualWorkLogModal
         isOpen={isManualWorkLogOpen}
         tasks={allTasks}
-        workingBlocks={todayCheckIn?.workingBlocks ?? []}
+        workingBlocks={effectiveTodayCheckIn?.workingBlocks ?? []}
         plannedBlocks={todayPlannedBlocks}
         onClose={() => setIsManualWorkLogOpen(false)}
         onSave={handleSaveManualWorkLog}
@@ -676,7 +718,7 @@ export function DashboardPage() {
         isOpen={isEndOfDayReviewOpen}
         date={todayDate}
         review={todayReview}
-        checkIn={todayCheckIn}
+        checkIn={effectiveTodayCheckIn}
         tasks={allTasks}
         plannedBlocks={plannedBlocks}
         timerSessions={timerSessions}

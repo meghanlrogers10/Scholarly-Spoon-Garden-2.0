@@ -21,6 +21,7 @@ export type CalendarSource =
   | "task"
   | "working-block"
   | "planned-task"
+  | "teaching-meeting"
   | "external-google";
 
 export type CalendarItem = {

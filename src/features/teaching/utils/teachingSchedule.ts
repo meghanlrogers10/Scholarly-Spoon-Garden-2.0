@@ -19,6 +19,65 @@ const weekdayCodes: Array<[string, number[]]> = [
   ["tuf", [2, 5]],
 ];
 
+export type MeetingTimeRange = {
+  startTime: string;
+  endTime: string;
+};
+
+function parseClock(value: string, meridiemHint?: string) {
+  const normalized = value.trim().toLowerCase().replace(/\./g, "");
+  const match = normalized.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/);
+
+  if (!match) {
+    return undefined;
+  }
+
+  let hours = Number(match[1]);
+  const minutes = Number(match[2] ?? "0");
+  const meridiem = match[3] ?? meridiemHint;
+
+  if (minutes > 59) {
+    return undefined;
+  }
+
+  if (meridiem) {
+    if (hours < 1 || hours > 12) {
+      return undefined;
+    }
+
+    if (meridiem === "pm" && hours < 12) hours += 12;
+    if (meridiem === "am" && hours === 12) hours = 0;
+  } else if (hours > 23) {
+    return undefined;
+  }
+
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+export function parseMeetingTimeRange(pattern?: string): MeetingTimeRange | undefined {
+  if (!pattern?.trim()) {
+    return undefined;
+  }
+
+  const match = pattern.match(
+    /(\d{1,2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)?)\s*(?:-|\u2013|\u2014|\bto\b)\s*(\d{1,2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)?)/i,
+  );
+
+  if (!match) {
+    return undefined;
+  }
+
+  const startMeridiem = match[1].match(/(am|pm)\.?$/i)?.[1];
+  const startTime = parseClock(match[1], startMeridiem);
+  const endTime = parseClock(match[2], startMeridiem);
+
+  if (!startTime || !endTime) {
+    return undefined;
+  }
+
+  return { startTime, endTime };
+}
+
 export function inferWeekdaysFromMeetingPattern(pattern?: string) {
   if (!pattern?.trim()) {
     return [];

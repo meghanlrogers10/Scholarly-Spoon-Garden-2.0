@@ -9,6 +9,7 @@ import type {
 } from "../../../shared/types/planning";
 import { getWorkingBlockDurationMinutes } from "./workingBlockCalendar";
 import { isShutdownReviewTask } from "./shutdownReviewTask";
+import { isTeachingWorkingBlock } from "./teachingScheduleBlocks";
 
 type ScoredTask = {
   task: Task;
@@ -80,7 +81,9 @@ function getDateDistanceInDays(date?: string, todayDate = getTodayDateKey()) {
 
 export function calculateAvailableMinutes(blocks: WorkingBlock[]) {
   return blocks.reduce(
-    (totalMinutes, block) => totalMinutes + getWorkingBlockDurationMinutes(block),
+    (totalMinutes, block) =>
+      totalMinutes +
+      (isTeachingWorkingBlock(block) ? 0 : getWorkingBlockDurationMinutes(block)),
     0,
   );
 }

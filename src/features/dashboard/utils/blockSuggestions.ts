@@ -10,6 +10,7 @@ import {
   getWorkingBlockRemainingMinutes,
 } from "./plannedTaskBlocks";
 import { isShutdownReviewTask } from "./shutdownReviewTask";
+import { isTeachingWorkingBlock } from "./teachingScheduleBlocks";
 import { getTaskEstimateMinutes, getTaskSpoonCost } from "./todayBuilder";
 
 export type SuggestionReason =
@@ -206,6 +207,16 @@ export function buildBlockSuggestions({
   const assignedTaskIds = new Set<string>();
 
   workingBlocks.forEach((block, blockIndex) => {
+    if (isTeachingWorkingBlock(block)) {
+      blockPlans.push({
+        block,
+        suggestions: [],
+        remainingMinutes: 0,
+        targetMinutes: 0,
+      });
+      return;
+    }
+
     const remainingMinutes = getWorkingBlockRemainingMinutes(block, plannedBlocks);
     const targetMinutes = Math.max(0, remainingMinutes - getBufferMinutes(remainingMinutes));
     let usedMinutes = 0;
