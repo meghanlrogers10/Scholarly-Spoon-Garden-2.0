@@ -22,7 +22,7 @@ const requiredEnvKeys: FirebaseEnvKey[] = [
 ];
 
 function readEnvValue(key: string) {
-  const value = import.meta.env[key];
+  const value = import.meta.env?.[key];
 
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }

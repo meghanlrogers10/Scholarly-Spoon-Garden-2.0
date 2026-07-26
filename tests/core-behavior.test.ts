@@ -13,6 +13,10 @@ import {
   type CloudSaveArea,
 } from "../src/shared/sync/cloudSaveTypes.ts";
 import {
+  mergeResearchDataForSync,
+  type ResearchCloudSnapshot,
+} from "../src/shared/firebase/researchCloudService.ts";
+import {
   shouldIsolateLocalDataForUserSwitch,
 } from "../src/shared/sync/userLocalData.ts";
 import {
@@ -28,7 +32,10 @@ import {
   downloadBackup,
   type AppBackup,
 } from "../src/shared/utils/appBackup.ts";
-import { RESEARCH_PROJECTS_STORAGE_KEY } from "../src/shared/constants/researchStorage.ts";
+import {
+  RESEARCH_PERMANENTLY_DELETED_PROJECT_IDS_STORAGE_KEY,
+  RESEARCH_PROJECTS_STORAGE_KEY,
+} from "../src/shared/constants/researchStorage.ts";
 import { MINDSPACE_ITEMS_STORAGE_KEY } from "../src/shared/constants/mindspaceStorage.ts";
 import { APP_SETTINGS_STORAGE_KEY } from "../src/shared/constants/settingsStorage.ts";
 
@@ -96,6 +103,24 @@ function installBrowserStubs() {
 
 function readSource(relativePath: string) {
   return fs.readFileSync(path.join(repoRoot, relativePath), "utf8");
+}
+
+function emptyResearchSnapshot(): ResearchCloudSnapshot {
+  return {
+    projects: [],
+    tasks: [],
+    logEntries: [],
+    drafts: [],
+    submissions: [],
+    literatureSources: [],
+    literatureNotes: [],
+    readingNotes: [],
+    mindMapNodes: [],
+    mindMapEdges: [],
+    synthesisSections: [],
+    prismaRecords: [],
+    prismaCriteria: [],
+  };
 }
 
 beforeEach(() => {
@@ -262,6 +287,83 @@ describe("cloud save coverage and isolation", () => {
       "teaching",
       "research",
     ].forEach((category) => assert.equal(categories.has(category as never), true));
+  });
+
+  it("backs up permanent Research deletion tombstones", () => {
+    assert.equal(
+      APP_STORAGE_KEYS.some(
+        (definition) =>
+          definition.key === RESEARCH_PERMANENTLY_DELETED_PROJECT_IDS_STORAGE_KEY,
+      ),
+      true,
+    );
+  });
+
+  it("keeps permanently deleted Research projects out of cloud merges", () => {
+    const localSnapshot = emptyResearchSnapshot();
+    const cloudSnapshot = emptyResearchSnapshot();
+
+    cloudSnapshot.projects = [
+      {
+        id: "project-gone",
+        title: "Gone project",
+        shortName: "Gone",
+        description: "Should stay deleted",
+        focusLevel: "paused",
+        status: "deleted",
+        currentStage: "lit-framing",
+        nextAction: "None",
+        updatedAt: "2026-07-01",
+        color: "purple",
+        taskCount: 1,
+        completedTaskCount: 0,
+        literatureCount: 1,
+        notesCount: 0,
+      },
+    ];
+    cloudSnapshot.tasks = [
+      {
+        id: "task-gone",
+        projectId: "project-gone",
+        title: "Old task",
+        stageKey: "lit-framing",
+        status: "todo",
+        priority: "medium",
+        spoonCost: 2,
+        createdAt: "2026-07-01",
+        updatedAt: "2026-07-01",
+      },
+    ];
+    cloudSnapshot.literatureSources = [
+      {
+        id: "source-gone",
+        projectId: "project-gone",
+        title: "Old source",
+        authors: "Someone",
+        year: "2026",
+        status: "queued",
+        tags: [],
+        createdAt: "2026-07-01",
+        updatedAt: "2026-07-01",
+      },
+    ];
+
+    const mergeResult = mergeResearchDataForSync(localSnapshot, cloudSnapshot, {
+      permanentlyDeletedProjectIds: ["project-gone"],
+    });
+
+    assert.deepEqual(mergeResult.projects, []);
+    assert.deepEqual(mergeResult.tasks, []);
+    assert.deepEqual(mergeResult.literatureSources, []);
+    assert.deepEqual(mergeResult.permanentDeletionTargets.projectIds, [
+      "project-gone",
+    ]);
+    assert.deepEqual(mergeResult.permanentDeletionTargets.taskIds, [
+      "task-gone",
+    ]);
+    assert.deepEqual(mergeResult.permanentDeletionTargets.literatureSourceIds, [
+      "source-gone",
+    ]);
   });
 
   it("isolates local data only when a different signed-in user takes over", () => {
