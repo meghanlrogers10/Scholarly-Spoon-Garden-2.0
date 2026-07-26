@@ -186,13 +186,17 @@ import type { ManualWorkLogEntry } from "../../../../shared/types/workLog";
 import { Button } from "../../../../shared/ui/Button";
 import {
   DAILY_CHECK_IN_STORAGE_KEY,
+  AVAILABLE_SPOONS_STORAGE_KEY,
   END_OF_DAY_REVIEW_STORAGE_KEY,
   getPlanningCounts,
   mergePlanningForSync,
   normalizeDailyCheckIns,
+  normalizeEnergyCheckIn,
   normalizeEndOfDayReviews,
   normalizePlannedTaskBlocks,
   PLANNED_TASK_BLOCK_STORAGE_KEY,
+  QUICK_CAPTURES_STORAGE_KEY,
+  normalizeCapturedItems,
 } from "../../../dashboard/utils/planningStorage";
 import { SyncBackupGate } from "./SyncBackupGate";
 import type { SyncPanelProps, SyncStatusMessage } from "./syncTypes";
@@ -310,12 +314,19 @@ export function CloudSaveControl({
     DAILY_CHECK_IN_STORAGE_KEY,
     [],
   );
+  const [storedAvailableSpoons, setStoredAvailableSpoons] = useLocalStorage<
+    unknown | null
+  >(AVAILABLE_SPOONS_STORAGE_KEY, null);
   const [storedPlannedBlocks, setStoredPlannedBlocks] = useLocalStorage<unknown[]>(
     PLANNED_TASK_BLOCK_STORAGE_KEY,
     [],
   );
   const [storedReviews, setStoredReviews] = useLocalStorage<unknown[]>(
     END_OF_DAY_REVIEW_STORAGE_KEY,
+    [],
+  );
+  const [storedQuickCaptures, setStoredQuickCaptures] = useLocalStorage<unknown[]>(
+    QUICK_CAPTURES_STORAGE_KEY,
     [],
   );
   const [, setLastPlanningSyncAt] = useLocalStorage<string>(
@@ -586,19 +597,25 @@ export function CloudSaveControl({
   async function syncPlanning(uid: string) {
     const localSnapshot = {
       checkIns: normalizeDailyCheckIns(storedCheckIns),
+      energyCheckIn: normalizeEnergyCheckIn(storedAvailableSpoons),
       plannedBlocks: normalizePlannedTaskBlocks(storedPlannedBlocks),
       reviews: normalizeEndOfDayReviews(storedReviews),
+      quickCaptures: normalizeCapturedItems(storedQuickCaptures),
     };
     const cloudSnapshot = await listUserPlanningData(uid);
     const mergeResult = mergePlanningForSync(localSnapshot, cloudSnapshot);
 
     await batchUploadUserPlanningData(uid, mergeResult);
+    if (mergeResult.energyCheckIn) {
+      setStoredAvailableSpoons(mergeResult.energyCheckIn.availableSpoons);
+    }
     setStoredCheckIns(mergeResult.checkIns);
     setStoredPlannedBlocks(mergeResult.plannedBlocks);
     setStoredReviews(mergeResult.reviews);
+    setStoredQuickCaptures(mergeResult.quickCaptures);
 
     const counts = getPlanningCounts(mergeResult);
-    return `Planning merged. ${counts.checkIns} check-ins, ${counts.workingBlocks} working blocks, ${counts.plannedBlocks} planned blocks.`;
+    return `Planning merged. ${counts.checkIns} check-ins, ${counts.energyCheckIn} energy check-in, ${counts.workingBlocks} working blocks, ${counts.plannedBlocks} planned blocks, ${counts.quickCaptures} quick captures.`;
   }
 
   async function syncTimer(uid: string) {

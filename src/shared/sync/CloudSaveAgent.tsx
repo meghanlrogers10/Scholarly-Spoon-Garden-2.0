@@ -17,6 +17,7 @@ import {
   LOCAL_STORAGE_CHANGE_EVENT,
   type LocalStorageChangeDetail,
 } from "../utils/localStorageSync";
+import { isolateLocalDataForUserSwitch } from "./userLocalData";
 
 function getAreasWaitingToSync(): CloudSaveArea[] {
   return Array.from(
@@ -31,7 +32,13 @@ export function CloudSaveAgent() {
   const uidRef = useRef<string | null>(null);
 
   useEffect(() => {
-    uidRef.current = user?.uid ?? null;
+    const uid = user?.uid ?? null;
+
+    if (uid) {
+      isolateLocalDataForUserSwitch(uid);
+    }
+
+    uidRef.current = uid;
   }, [user?.uid]);
 
   const clearDebounce = useCallback(() => {
@@ -174,4 +181,3 @@ export function CloudSaveAgent() {
 
   return null;
 }
-

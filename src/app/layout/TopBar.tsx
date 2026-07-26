@@ -1,10 +1,13 @@
 import { LogIn, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
+import { getAppDisplayName } from "../../shared/auth/displayName";
 import { useAuthUser } from "../../shared/auth/useAuthUser";
+import { useAppSettings } from "../../shared/hooks/useAppSettings";
 
 export function TopBar() {
   const { user, isConfigured, signOut } = useAuthUser();
-  const accountLabel = user?.displayName ?? user?.email ?? "Signed in";
+  const { settings } = useAppSettings();
+  const accountLabel = getAppDisplayName(user, settings.preferredName);
 
   return (
     <header className="app-header">

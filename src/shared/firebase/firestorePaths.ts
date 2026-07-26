@@ -6,8 +6,10 @@ export function getUserFirestorePaths(uid: string) {
     profileSettings: `${userRoot}/profile/settings`,
     appSettings: `${userRoot}/profile/appSettings`,
     appStatus: `${userRoot}/profile/appStatus`,
+    energyCheckIn: `${userRoot}/profile/energyCheckIn`,
     tasks: `${userRoot}/tasks`,
     dailyCheckIns: `${userRoot}/dailyCheckIns`,
+    quickCaptures: `${userRoot}/quickCaptures`,
     workingBlocks: `${userRoot}/workingBlocks`,
     plannedTaskBlocks: `${userRoot}/plannedTaskBlocks`,
     endOfDayReviews: `${userRoot}/endOfDayReviews`,
@@ -104,6 +106,18 @@ export function getUserEndOfDayReviewDocumentSegments(
   dateOrId: string,
 ) {
   return ["users", uid, "endOfDayReviews", dateOrId] as const;
+}
+
+export function getUserEnergyCheckInDocumentSegments(uid: string) {
+  return ["users", uid, "profile", "energyCheckIn"] as const;
+}
+
+export function getUserQuickCapturesCollectionSegments(uid: string) {
+  return ["users", uid, "quickCaptures"] as const;
+}
+
+export function getUserQuickCaptureDocumentSegments(uid: string, captureId: string) {
+  return ["users", uid, "quickCaptures", captureId] as const;
 }
 
 export function getUserTimerSessionsCollectionSegments(uid: string) {

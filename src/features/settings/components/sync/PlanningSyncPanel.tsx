@@ -17,13 +17,17 @@ import { useLocalStorage } from "../../../../shared/hooks/useLocalStorage";
 import { Button } from "../../../../shared/ui/Button";
 import {
   DAILY_CHECK_IN_STORAGE_KEY,
+  AVAILABLE_SPOONS_STORAGE_KEY,
   END_OF_DAY_REVIEW_STORAGE_KEY,
   getPlanningCounts,
   mergePlanningForSync,
   normalizeDailyCheckIns,
+  normalizeEnergyCheckIn,
   normalizeEndOfDayReviews,
   normalizePlannedTaskBlocks,
   PLANNED_TASK_BLOCK_STORAGE_KEY,
+  QUICK_CAPTURES_STORAGE_KEY,
+  normalizeCapturedItems,
 } from "../../../dashboard/utils/planningStorage";
 import { SyncBackupGate } from "./SyncBackupGate";
 import { SyncPanel } from "./SyncPanel";
@@ -43,12 +47,19 @@ export function PlanningSyncPanel({
     DAILY_CHECK_IN_STORAGE_KEY,
     [],
   );
+  const [storedAvailableSpoons, setStoredAvailableSpoons] = useLocalStorage<
+    unknown | null
+  >(AVAILABLE_SPOONS_STORAGE_KEY, null);
   const [storedPlannedBlocks, setStoredPlannedBlocks] = useLocalStorage<unknown[]>(
     PLANNED_TASK_BLOCK_STORAGE_KEY,
     [],
   );
   const [storedReviews, setStoredReviews] = useLocalStorage<unknown[]>(
     END_OF_DAY_REVIEW_STORAGE_KEY,
+    [],
+  );
+  const [storedQuickCaptures, setStoredQuickCaptures] = useLocalStorage<unknown[]>(
+    QUICK_CAPTURES_STORAGE_KEY,
     [],
   );
   const [planningSyncEnabled, setPlanningSyncEnabled] = useLocalStorage<boolean>(
@@ -81,8 +92,10 @@ export function PlanningSyncPanel({
     !canUsePlanningSync || planningSyncing || loading;
   const localPlanningSnapshot = {
     checkIns: normalizeDailyCheckIns(storedCheckIns),
+    energyCheckIn: normalizeEnergyCheckIn(storedAvailableSpoons),
     plannedBlocks: normalizePlannedTaskBlocks(storedPlannedBlocks),
     reviews: normalizeEndOfDayReviews(storedReviews),
+    quickCaptures: normalizeCapturedItems(storedQuickCaptures),
   };
   const localPlanningCounts = getPlanningCounts(localPlanningSnapshot);
 
@@ -113,8 +126,12 @@ export function PlanningSyncPanel({
 
   function saveLocalPlanningSnapshot(snapshot: typeof localPlanningSnapshot) {
     setStoredCheckIns(snapshot.checkIns);
+    if (snapshot.energyCheckIn) {
+      setStoredAvailableSpoons(snapshot.energyCheckIn.availableSpoons);
+    }
     setStoredPlannedBlocks(snapshot.plannedBlocks);
     setStoredReviews(snapshot.reviews);
+    setStoredQuickCaptures(snapshot.quickCaptures);
   }
 
   async function refreshCloudPlanningCount() {
@@ -157,6 +174,8 @@ export function PlanningSyncPanel({
       const cloudSnapshot = await listUserPlanningData(user.uid);
       setCloudPlanningCounts({
         dailyCheckIns: cloudSnapshot.checkIns.length,
+        energyCheckIn: cloudSnapshot.energyCheckIn ? 1 : 0,
+        quickCaptures: cloudSnapshot.quickCaptures.length,
         workingBlocks: cloudSnapshot.workingBlocks.length,
         plannedTaskBlocks: cloudSnapshot.plannedBlocks.length,
         endOfDayReviews: cloudSnapshot.reviews.length,
@@ -171,6 +190,8 @@ export function PlanningSyncPanel({
         saveLocalPlanningSnapshot(mergeResult);
         setCloudPlanningCounts({
           dailyCheckIns: mergeResult.checkIns.length,
+          energyCheckIn: mergeResult.energyCheckIn ? 1 : 0,
+          quickCaptures: mergeResult.quickCaptures.length,
           workingBlocks: getPlanningCounts(mergeResult).workingBlocks,
           plannedTaskBlocks: mergeResult.plannedBlocks.length,
           endOfDayReviews: mergeResult.reviews.length,
@@ -191,6 +212,8 @@ export function PlanningSyncPanel({
         await batchUploadUserPlanningData(user.uid, mergeResult);
         setCloudPlanningCounts({
           dailyCheckIns: mergeResult.checkIns.length,
+          energyCheckIn: mergeResult.energyCheckIn ? 1 : 0,
+          quickCaptures: mergeResult.quickCaptures.length,
           workingBlocks: getPlanningCounts(mergeResult).workingBlocks,
           plannedTaskBlocks: mergeResult.plannedBlocks.length,
           endOfDayReviews: mergeResult.reviews.length,

@@ -1,8 +1,15 @@
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import {
+  deleteField,
+  doc,
+  getDoc,
+  serverTimestamp,
+  setDoc,
+} from "firebase/firestore";
 import type {
   GoogleCalendarSyncDirection,
   GoogleCalendarSyncSettings,
 } from "../types/googleCalendarSync";
+import { normalizePreferredName } from "../auth/displayName";
 import { defaultAppSettings, type AppSettings } from "../types/settings";
 import { db } from "./firebaseClient";
 import { getUserAppSettingsDocumentSegments } from "./firestorePaths";
@@ -167,6 +174,8 @@ export function normalizeAppSettings(value: unknown): AppSettings | null {
 
   return {
     ...value,
+    preferredName: normalizePreferredName(value.preferredName),
+    preferredNameUpdatedAt: asString(value.preferredNameUpdatedAt),
     calendarDayStartHour: asNumber(
       value.calendarDayStartHour,
       defaultAppSettings.calendarDayStartHour,
@@ -286,18 +295,27 @@ export async function readUserAppSettings(
 
 export async function saveUserAppSettings(uid: string, settings: unknown) {
   const firestore = requireDb();
+  const normalizedInput = normalizeAppSettings(settings);
   const normalizedSettings = omitUndefinedValues({
     ...normalizeLocalAppSettings(settings),
     updatedAt:
-      normalizeAppSettings(settings)?.updatedAt ?? new Date().toISOString(),
+      normalizedInput?.updatedAt ?? new Date().toISOString(),
   });
+  const payload: Record<string, unknown> = {
+    ...normalizedSettings,
+    cloudUpdatedAt: serverTimestamp(),
+  };
+
+  if (
+    normalizedInput?.preferredNameUpdatedAt &&
+    !normalizedInput.preferredName
+  ) {
+    payload.preferredName = deleteField();
+  }
 
   await setDoc(
     doc(firestore, ...getUserAppSettingsDocumentSegments(uid)),
-    {
-      ...normalizedSettings,
-      cloudUpdatedAt: serverTimestamp(),
-    },
+    payload,
     { merge: true },
   );
 
@@ -319,20 +337,58 @@ export function mergeAppSettingsForSync(
     };
   }
 
+  const readableCloudSettings = cloudSettings;
+
+  function mergePreferredName(
+    base: AppSettings,
+    newer: AppSettings,
+    older: AppSettings,
+  ) {
+    const localNameTime = timestamp(localSettings.preferredNameUpdatedAt);
+    const cloudNameTime = timestamp(readableCloudSettings.preferredNameUpdatedAt);
+
+    if (localNameTime > 0 || cloudNameTime > 0) {
+      const localNameIsNewer = localNameTime >= cloudNameTime;
+      const selected = localNameIsNewer ? localSettings : readableCloudSettings;
+
+      return {
+        ...base,
+        preferredName: selected.preferredName,
+        preferredNameUpdatedAt: selected.preferredNameUpdatedAt,
+      };
+    }
+
+    if (!newer.preferredName && older.preferredName) {
+      return {
+        ...base,
+        preferredName: older.preferredName,
+        preferredNameUpdatedAt: older.preferredNameUpdatedAt,
+      };
+    }
+
+    return base;
+  }
+
   const localTime = timestamp(localSettings.updatedAt);
-  const cloudTime = timestamp(cloudSettings.updatedAt);
+  const cloudTime = timestamp(readableCloudSettings.updatedAt);
 
   if (localTime > 0 || cloudTime > 0) {
     const localIsNewer = localTime >= cloudTime;
-    const newerSettings = localIsNewer ? localSettings : cloudSettings;
-    const olderSettings = localIsNewer ? cloudSettings : localSettings;
+    const newerSettings = localIsNewer ? localSettings : readableCloudSettings;
+    const olderSettings = localIsNewer ? readableCloudSettings : localSettings;
 
-    return {
-      settings: {
+    const mergedSettings = mergePreferredName(
+      {
         ...olderSettings,
         ...newerSettings,
         updatedAt: new Date().toISOString(),
       },
+      newerSettings,
+      olderSettings,
+    );
+
+    return {
+      settings: mergedSettings,
       used: localIsNewer ? "local" : "cloud",
       reason: localIsNewer
         ? "Local settings had the newest updatedAt timestamp."
@@ -341,11 +397,15 @@ export function mergeAppSettingsForSync(
   }
 
   return {
-    settings: {
-      ...cloudSettings,
+    settings: mergePreferredName(
+      {
+      ...readableCloudSettings,
       ...localSettings,
       updatedAt: new Date().toISOString(),
-    },
+      },
+      localSettings,
+      readableCloudSettings,
+    ),
     used: "local",
     reason:
       "Neither settings object had updatedAt, so merge preferred local values while preserving cloud-only fields.",
