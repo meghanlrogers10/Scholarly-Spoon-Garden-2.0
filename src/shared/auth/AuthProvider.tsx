@@ -1,10 +1,9 @@
 import {
   createUserWithEmailAndPassword,
-  getRedirectResult,
   GoogleAuthProvider,
   onAuthStateChanged,
+  signInWithCredential,
   signInWithEmailAndPassword,
-  signInWithRedirect,
   signOut as firebaseSignOut,
   type User,
 } from "firebase/auth";
@@ -20,6 +19,7 @@ import {
   isFirebaseConfigured,
   missingFirebaseEnvKeys,
 } from "../firebase/firebaseClient";
+import { requestGoogleAuthAccessToken } from "../google/googleIdentity";
 import { AuthContext, type AuthContextValue } from "./authContext";
 
 function getFriendlyAuthError(authError: unknown, fallback: string) {
@@ -56,7 +56,7 @@ function getFriendlyAuthError(authError: unknown, fallback: string) {
   }
 
   if (code === "auth/popup-blocked") {
-    return "The browser blocked the Google sign-in popup. Try Google sign-in again; this build now uses a redirect instead of a popup.";
+    return "The browser blocked the Google sign-in window. Allow popups for this app, then try Google sign-in again.";
   }
 
   if (code === "auth/operation-not-allowed") {
@@ -115,13 +115,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!auth) {
       return;
     }
-
-    getRedirectResult(auth).catch((authError: unknown) => {
-      setError(
-        getFriendlyAuthError(authError, "Google sign-in did not complete.")
-      );
-      setLoading(false);
-    });
 
     return onAuthStateChanged(
       auth,
@@ -187,11 +180,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     setError(null);
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: "select_account" });
-
     try {
-      await signInWithRedirect(auth, provider);
+      const accessToken = await requestGoogleAuthAccessToken();
+      const credential = GoogleAuthProvider.credential(null, accessToken);
+      await signInWithCredential(auth, credential);
     } catch (authError) {
       setError(
         getFriendlyAuthError(authError, "Google sign-in did not complete.")

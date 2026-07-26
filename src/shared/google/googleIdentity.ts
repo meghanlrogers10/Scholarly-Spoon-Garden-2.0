@@ -78,8 +78,19 @@ export function loadGoogleIdentityScript(): Promise<void> {
 }
 
 export async function requestGoogleCalendarAccessToken(): Promise<string> {
+  return requestGoogleAccessToken(GOOGLE_CALENDAR_READONLY_SCOPE, "consent");
+}
+
+export async function requestGoogleAuthAccessToken(): Promise<string> {
+  return requestGoogleAccessToken("email profile openid", "select_account");
+}
+
+async function requestGoogleAccessToken(
+  scope: string,
+  prompt: "consent" | "select_account",
+): Promise<string> {
   if (!GOOGLE_CLIENT_ID) {
-    throw new Error("Google Client ID missing. Add VITE_GOOGLE_CLIENT_ID to enable Google Calendar connection.");
+    throw new Error("Google Client ID missing. Add VITE_GOOGLE_CLIENT_ID to enable Google sign-in.");
   }
 
   await loadGoogleIdentityScript();
@@ -93,7 +104,7 @@ export async function requestGoogleCalendarAccessToken(): Promise<string> {
   return new Promise((resolve, reject) => {
     const tokenClient = initTokenClient({
       client_id: GOOGLE_CLIENT_ID,
-      scope: GOOGLE_CALENDAR_READONLY_SCOPE,
+      scope,
       callback: (response) => {
         if (response.error) {
           reject(
@@ -121,6 +132,6 @@ export async function requestGoogleCalendarAccessToken(): Promise<string> {
       },
     });
 
-    tokenClient.requestAccessToken({ prompt: "consent" });
+    tokenClient.requestAccessToken({ prompt });
   });
 }
