@@ -1,9 +1,10 @@
 import {
   createUserWithEmailAndPassword,
+  getRedirectResult,
   GoogleAuthProvider,
   onAuthStateChanged,
   signInWithEmailAndPassword,
-  signInWithPopup,
+  signInWithRedirect,
   signOut as firebaseSignOut,
   type User,
 } from "firebase/auth";
@@ -52,6 +53,10 @@ function getFriendlyAuthError(authError: unknown, fallback: string) {
 
   if (code === "auth/popup-closed-by-user") {
     return "Google sign-in was closed before it finished.";
+  }
+
+  if (code === "auth/popup-blocked") {
+    return "The browser blocked the Google sign-in popup. Try Google sign-in again; this build now uses a redirect instead of a popup.";
   }
 
   if (code === "auth/operation-not-allowed") {
@@ -110,6 +115,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!auth) {
       return;
     }
+
+    getRedirectResult(auth).catch((authError: unknown) => {
+      setError(
+        getFriendlyAuthError(authError, "Google sign-in did not complete.")
+      );
+      setLoading(false);
+    });
 
     return onAuthStateChanged(
       auth,
@@ -179,7 +191,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     provider.setCustomParameters({ prompt: "select_account" });
 
     try {
-      await signInWithPopup(auth, provider);
+      await signInWithRedirect(auth, provider);
     } catch (authError) {
       setError(
         getFriendlyAuthError(authError, "Google sign-in did not complete.")
