@@ -8,6 +8,8 @@ import type {
   WorkingBlock,
 } from "../../../shared/types/planning";
 import { getWorkingBlockDurationMinutes } from "./workingBlockCalendar";
+import { isShutdownReviewTask } from "./shutdownReviewTask";
+import { isTeachingWorkingBlock } from "./teachingScheduleBlocks";
 
 type ScoredTask = {
   task: Task;
@@ -48,6 +50,7 @@ export const taskEstimateDefaults: Record<TaskType, number> = {
   teaching: 45,
   research: 60,
   mindspace: 20,
+  "shutdown-review": 5,
   other: 30,
 };
 
@@ -78,7 +81,9 @@ function getDateDistanceInDays(date?: string, todayDate = getTodayDateKey()) {
 
 export function calculateAvailableMinutes(blocks: WorkingBlock[]) {
   return blocks.reduce(
-    (totalMinutes, block) => totalMinutes + getWorkingBlockDurationMinutes(block),
+    (totalMinutes, block) =>
+      totalMinutes +
+      (isTeachingWorkingBlock(block) ? 0 : getWorkingBlockDurationMinutes(block)),
     0,
   );
 }
@@ -98,6 +103,7 @@ export function getTaskSpoonCost(task: Task) {
   }
 
   if (task.lowEnergyFriendly) return 1;
+  if (isShutdownReviewTask(task)) return 1;
   if (task.taskType === "email-admin" || task.source === "quick-capture") return 1;
   if (task.taskType === "writing" || task.taskType === "analysis") return 3;
   if (task.taskType === "coding") return 3;
@@ -254,7 +260,24 @@ export function buildTodayPlan(
   };
   const warnings: TodayBuilderWarning[] = [];
   const candidates = getCandidateTasks(tasks, date);
+  const shutdownTasks: ScoredTask[] = candidates
+    .map((task) => {
+      const distance = getDateDistanceInDays(task.dueDate, date);
+
+      return {
+        task,
+        estimateMinutes: getTaskEstimateMinutes(task),
+        spoonCost: getTaskSpoonCost(task),
+        score: scoreTaskForToday(task, context),
+        isOverdue: distance !== undefined && distance < 0,
+        isDueToday: distance === 0,
+        isDueSoon: distance !== undefined && distance >= 0 && distance <= 7,
+      };
+    })
+    .filter(({ task }) => isShutdownReviewTask(task))
+    .sort((a, b) => b.score - a.score);
   const scoredTasks: ScoredTask[] = candidates
+    .filter((task) => !isShutdownReviewTask(task))
     .map((task) => {
       const distance = getDateDistanceInDays(task.dueDate, date);
 
@@ -494,6 +517,7 @@ export function buildTodayPlan(
       backupTaskIds: backupTasks.map(({ task }) => task.id),
       postponeTaskIds: postponeTasks.map(({ task }) => task.id),
       quickWinTaskIds: quickWins.map(({ task }) => task.id),
+      shutdownTaskIds: shutdownTasks.map(({ task }) => task.id),
     },
     warnings,
     generatedAt: new Date().toISOString(),

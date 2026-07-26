@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { writeLocalStorageValue } from "../../../shared/utils/localStorageSync";
 import type {
   ResearchDraft,
   ResearchDraftInput,
@@ -66,7 +67,7 @@ function loadDrafts() {
 }
 
 function saveDrafts(drafts: ResearchDraft[]) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(drafts));
+  writeLocalStorageValue(STORAGE_KEY, drafts);
 }
 
 function createDraftId(projectId: string) {
@@ -100,11 +101,9 @@ export function useResearchDrafts() {
   function updateDrafts(
     updater: (currentDrafts: ResearchDraft[]) => ResearchDraft[]
   ) {
-    setDrafts((currentDrafts) => {
-      const updatedDrafts = updater(currentDrafts);
-      saveDrafts(updatedDrafts);
-      return updatedDrafts;
-    });
+    const updatedDrafts = updater(loadDrafts());
+    saveDrafts(updatedDrafts);
+    setDrafts(updatedDrafts);
   }
 
   function refreshDrafts() {

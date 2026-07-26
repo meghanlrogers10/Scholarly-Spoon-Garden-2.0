@@ -33,6 +33,12 @@ export function readLocalStorageValue<T>(key: string, fallbackValue: T): T {
 }
 
 export function writeLocalStorageValue<T>(key: string, value: T) {
-  window.localStorage.setItem(key, JSON.stringify(value));
+  const nextValue = JSON.stringify(value);
+
+  if (window.localStorage.getItem(key) === nextValue) {
+    return;
+  }
+
+  window.localStorage.setItem(key, nextValue);
   notifyLocalStorageChange(key);
 }

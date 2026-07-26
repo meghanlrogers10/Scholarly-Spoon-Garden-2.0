@@ -6,15 +6,9 @@ import { ResearchWorkspaceTile } from "../components/ResearchWorkspaceTile";
 import { researchStages } from "../data/researchStages";
 import { useResearchDrafts } from "../hooks/useResearchDrafts";
 import { useResearchLog } from "../hooks/useResearchLog";
-import { useResearchMindMap } from "../hooks/useResearchMindMap";
 import { useResearchProjects } from "../hooks/useResearchProjects";
 import { useResearchTasks } from "../hooks/useResearchTasks";
 import { useResearchSubmissions } from "../hooks/useResearchSubmissions";
-import { useResearchLiterature } from "../hooks/useResearchLiterature";
-import { useResearchLiteratureNotes } from "../hooks/useResearchLiteratureNotes";
-import { useResearchLiteratureReadingNotes } from "../hooks/useResearchLiteratureReadingNotes";
-import { useResearchPrisma } from "../hooks/useResearchPrisma";
-import { useResearchSynthesis } from "../hooks/useResearchSynthesis";
 import {
   buildProjectHtmlPacket,
   buildProjectMarkdownPacket,
@@ -73,12 +67,7 @@ type ProjectSearchResultType =
   | "tasks"
   | "log"
   | "drafts"
-  | "submissions"
-  | "sources"
-  | "notes"
-  | "prisma"
-  | "synthesis"
-  | "mindmap";
+  | "submissions";
 
 type ProjectSearchFilter = "all" | ProjectSearchResultType;
 
@@ -102,11 +91,6 @@ const projectSearchFilterLabels: Record<ProjectSearchFilter, string> = {
   log: "Log",
   drafts: "Drafts",
   submissions: "Submissions",
-  sources: "Sources",
-  notes: "Source Notes",
-  prisma: "PRISMA / Screening",
-  synthesis: "Synthesis",
-  mindmap: "Mind Map",
 };
 
 function getTimestamp(value?: string) {
@@ -193,26 +177,11 @@ export function ResearchProjectPage() {
   const { getDraftsForProject, refreshDrafts } = useResearchDrafts();
   const { getSubmissionsForProject, refreshSubmissions } =
     useResearchSubmissions();
-  const { getSourcesForProject, refreshSources } = useResearchLiterature();
-  const { getNotesForProject, refreshNotes } = useResearchLiteratureNotes();
-  const { getReadingNotesForProject, refreshReadingNotes } =
-    useResearchLiteratureReadingNotes();
-  const { getSectionsForProject, refreshSections } = useResearchSynthesis();
-  const { getNodesForProject, refreshNodes } = useResearchMindMap();
-  const { getRecordsForProject, getCriteriaForProject, refreshPrisma } =
-    useResearchPrisma();
-
   useEffect(() => {
     refreshTasks();
     refreshLogEntries();
     refreshDrafts();
     refreshSubmissions();
-    refreshSources();
-    refreshNotes();
-    refreshReadingNotes();
-    refreshSections();
-    refreshNodes();
-    refreshPrisma();
   // Refresh localStorage-backed project workspace data only on route transitions.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key]);
@@ -287,23 +256,6 @@ export function ResearchProjectPage() {
     activeSubmissionStatuses.includes(submission.status)
   );
   const activeSubmission = activeSubmissions[0] ?? submissions[0];
-
-  const sources = getSourcesForProject(project.id);
-  const notes = getNotesForProject(project.id);
-  const readingNotes = getReadingNotesForProject(project.id);
-  const synthesisSections = getSectionsForProject(project.id);
-  const mindMapNodes = getNodesForProject(project.id);
-  const prismaRecords = getRecordsForProject(project.id);
-  const prismaCriteria = getCriteriaForProject(project.id);
-  const citedSources = sources.filter((source) => source.status === "cited");
-  const readSources = sources.filter((source) =>
-    ["read", "notes-taken", "cited"].includes(source.status)
-  );
-
-  const literatureMeta =
-    sources.length === 0
-      ? "No sources yet"
-      : `${readSources.length}/${sources.length} read · ${citedSources.length} cited`;
 
   const submissionMeta =
     submissions.length === 0
@@ -417,173 +369,6 @@ export function ResearchProjectPage() {
               to: `${basePath}/journals`,
             })),
         },
-        {
-          key: "sources",
-          label: "Sources",
-          results: sources
-            .filter((source) =>
-              matchesSearch(normalizedSearchTerm, [
-                source.title,
-                source.authors,
-                source.year,
-                source.themes,
-                source.keyQuote,
-                source.notes,
-                source.status,
-                source.sourceType,
-              ])
-            )
-            .map((source) => ({
-              id: source.id,
-              title: source.title,
-              snippet:
-                [source.authors, source.year].filter(Boolean).join(" · ") ||
-                `${labelFromValue(source.sourceType)} · ${labelFromValue(
-                  source.status
-                )}`,
-              typeLabel: "Source",
-              to: `${basePath}/literature`,
-            })),
-        },
-        {
-          key: "notes",
-          label: "Source Notes",
-          results: [
-            ...notes
-            .filter((note) =>
-              matchesSearch(normalizedSearchTerm, [
-                note.title,
-                note.body,
-                note.noteKind,
-                note.sourceTitle,
-                note.themes,
-                note.keyQuote,
-                note.argumentSlot,
-              ])
-            )
-            .map((note) => ({
-              id: note.id,
-              title: note.title,
-              snippet: `${labelFromValue(note.noteKind)}${
-                note.sourceTitle ? ` · ${note.sourceTitle}` : ""
-              }`,
-              typeLabel: "Source Note",
-              to: `${basePath}/literature`,
-            })),
-            ...readingNotes
-              .filter((note) =>
-                matchesSearch(normalizedSearchTerm, [
-                  note.sourceTitle,
-                  Object.values(note.sections).join(" "),
-                  note.extractedThemes,
-                  note.manualThemes,
-                ])
-              )
-              .map((note) => ({
-                id: note.id,
-                title: note.sourceTitle,
-                snippet: `Reading lab notes${
-                  [...note.extractedThemes, ...note.manualThemes].length > 0
-                    ? ` · ${[...note.extractedThemes, ...note.manualThemes].join(
-                        ", "
-                      )}`
-                    : ""
-                }`,
-                typeLabel: "Reading Notes",
-                to: `${basePath}/literature`,
-              })),
-          ],
-        },
-        {
-          key: "prisma",
-          label: "PRISMA / Screening",
-          results: prismaRecords
-            .filter((record) =>
-              matchesSearch(normalizedSearchTerm, [
-                record.sourceTitle,
-                record.status,
-                record.exclusionReason,
-                record.inclusionNotes,
-                record.screeningNotes,
-                record.database,
-                record.sourceOrigin,
-                record.searchString,
-              ])
-            )
-            .map((record) => ({
-              id: record.id,
-              title: record.sourceTitle ?? "Untitled screening record",
-              snippet: `${labelFromValue(record.status)}${
-                record.exclusionReason
-                  ? ` · ${record.exclusionReason}`
-                  : ""
-              }`,
-              typeLabel: "PRISMA",
-              to: `${basePath}/literature`,
-            })),
-        },
-        {
-          key: "synthesis",
-          label: "Synthesis",
-          results: synthesisSections
-            .filter((section) =>
-              matchesSearch(normalizedSearchTerm, [
-                section.title,
-                section.claim,
-                section.themes,
-                section.draftNote,
-                section.status,
-              ])
-            )
-            .map((section) => ({
-              id: section.id,
-              title: section.title,
-              snippet: `${labelFromValue(section.status)}${
-                section.themes.length > 0
-                  ? ` · ${section.themes.join(", ")}`
-                  : ""
-              }`,
-              typeLabel: "Synthesis",
-              to: `${basePath}/literature`,
-            })),
-        },
-        {
-          key: "mindmap",
-          label: "Mind Map",
-          results: mindMapNodes
-            .filter((node) =>
-              matchesSearch(normalizedSearchTerm, [
-                node.title,
-                node.body,
-                node.nodeType,
-                node.sourceTitle,
-                node.noteTitle,
-                node.synthesisSectionTitle,
-                node.relatedThemes,
-              ])
-            )
-            .map((node) => ({
-              id: node.id,
-              title: node.title,
-              snippet: `${labelFromValue(node.nodeType)}${
-                node.sourceTitle ||
-                node.noteTitle ||
-                node.synthesisSectionTitle ||
-                node.relatedThemes?.length
-                  ? ` · ${[
-                      node.sourceTitle,
-                      node.noteTitle,
-                      node.synthesisSectionTitle,
-                      node.relatedThemes?.join(", "),
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}`
-                  : ""
-              }`,
-              typeLabel: "Mind Map",
-              to: `${basePath}/literature`,
-            })),
-        },
       ] satisfies ProjectSearchGroup[]).filter(
         (group) => searchFilter === "all" || group.key === searchFilter
       )
@@ -644,14 +429,6 @@ export function ResearchProjectPage() {
                 submissionStatusLabels[activeSubmission.status]
               }`
             : currentProject.targetJournal ?? "No journal selected",
-        },
-        {
-          label: "Literature",
-          value: `${sources.length} sources, ${
-            notes.length + readingNotes.length
-          } source notes, ${synthesisSections.length} synthesis sections, ${
-            mindMapNodes.length
-          } mind map nodes`,
         },
       ],
       sections: [
@@ -735,152 +512,6 @@ export function ResearchProjectPage() {
               .join(" · "),
           })),
         },
-        {
-          title: "Literature Source Summary",
-          items: sources.map((source) => ({
-            title: source.title,
-            meta:
-              [
-                source.authors,
-                source.year,
-                labelFromValue(source.sourceType),
-                labelFromValue(source.status),
-                source.themes.length > 0
-                  ? `Themes: ${source.themes.join(", ")}`
-                  : undefined,
-              ]
-                .filter(Boolean)
-                .join(" · ") || undefined,
-            body: [source.keyQuote, source.notes].filter(Boolean).join(" · "),
-          })),
-        },
-        {
-          title: "PRISMA / Screening",
-          items: [
-            {
-              title: "Screening Summary",
-              meta: [
-                `Identified: ${
-                  prismaRecords.filter((record) => record.status === "identified")
-                    .length
-                }`,
-                `Screened: ${
-                  prismaRecords.filter((record) => record.status === "screened")
-                    .length
-                }`,
-                `Eligible: ${
-                  prismaRecords.filter((record) => record.status === "eligible")
-                    .length
-                }`,
-                `Included: ${
-                  prismaRecords.filter((record) => record.status === "included")
-                    .length
-                }`,
-                `Excluded: ${
-                  prismaRecords.filter((record) => record.status === "excluded")
-                    .length
-                }`,
-              ].join(" · "),
-              body: [
-                prismaCriteria.inclusionCriteria.length
-                  ? `Inclusion criteria: ${prismaCriteria.inclusionCriteria.join(
-                      "; "
-                    )}`
-                  : "",
-                prismaCriteria.exclusionCriteria.length
-                  ? `Exclusion criteria: ${prismaCriteria.exclusionCriteria.join(
-                      "; "
-                    )}`
-                  : "",
-              ]
-                .filter(Boolean)
-                .join(" · "),
-            },
-            ...prismaRecords.map((record) => ({
-              title: record.sourceTitle ?? "Untitled screening record",
-              meta: `${record.status}${
-                record.database ? ` · ${record.database}` : ""
-              }${record.screenedAt ? ` · Screened ${record.screenedAt}` : ""}`,
-              body: [
-                record.exclusionReason
-                  ? `Exclusion: ${record.exclusionReason}`
-                  : "",
-                record.inclusionNotes ? `Inclusion: ${record.inclusionNotes}` : "",
-                record.screeningNotes ? `Notes: ${record.screeningNotes}` : "",
-              ]
-                .filter(Boolean)
-                .join(" · "),
-            })),
-          ],
-        },
-        {
-          title: "Source Notes",
-          items: notes.map((note) => ({
-            title: note.title,
-            meta: `${labelFromValue(note.noteKind)}${
-              note.sourceTitle ? ` · ${note.sourceTitle}` : ""
-            }${
-              note.themes.length > 0 ? ` · Themes: ${note.themes.join(", ")}` : ""
-            }`,
-            body: [note.keyQuote, note.body, note.argumentSlot]
-              .filter(Boolean)
-              .join(" · "),
-          })),
-        },
-        {
-          title: "Reading Notes Lab Documents",
-          items: readingNotes.map((note) => ({
-            title: note.sourceTitle,
-            meta: [
-              note.extractedThemes.length > 0
-                ? `Inline themes: ${note.extractedThemes.join(", ")}`
-                : undefined,
-              note.manualThemes.length > 0
-                ? `Manual themes: ${note.manualThemes.join(", ")}`
-                : undefined,
-            ]
-              .filter(Boolean)
-              .join(" · "),
-            body: Object.entries(note.sections)
-              .filter(([, value]) => value.trim())
-              .map(([key, value]) => `${labelFromValue(key)}: ${value}`)
-              .join(" · "),
-          })),
-        },
-        {
-          title: "Synthesis Outline Sections",
-          items: synthesisSections.map((section) => ({
-            title: section.title,
-            meta: `${labelFromValue(section.status)}${
-              section.themes.length > 0
-                ? ` · Themes: ${section.themes.join(", ")}`
-                : ""
-            }`,
-            body: [section.claim, section.draftNote].filter(Boolean).join(" · "),
-          })),
-        },
-        {
-          title: "Mind Map Node Summary",
-          items: mindMapNodes.map((node) => ({
-            title: node.title,
-            meta: `${labelFromValue(node.nodeType)}${
-              node.sourceTitle ||
-              node.noteTitle ||
-              node.synthesisSectionTitle ||
-              node.relatedThemes?.length
-                ? ` · ${[
-                    node.sourceTitle,
-                    node.noteTitle,
-                    node.synthesisSectionTitle,
-                    node.relatedThemes?.join(", "),
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}`
-                : ""
-            }`,
-            body: node.body,
-          })),
-        },
       ],
     };
   }
@@ -898,13 +529,6 @@ export function ResearchProjectPage() {
           logEntries,
           drafts,
           submissions,
-          literatureSources: sources,
-          literatureNotes: notes,
-          literatureReadingNotes: readingNotes,
-          prismaRecords,
-          prismaCriteria,
-          synthesisSections,
-          mindMapNodes,
         },
         null,
         2
@@ -1021,16 +645,13 @@ export function ResearchProjectPage() {
             <h2 id="command-center-heading">Project command center</h2>
             <p>
               A quick re-entry point for the next task, low-energy options,
-              recent context, submissions, and literature coverage.
+              recent context, drafts, and submissions.
             </p>
           </div>
 
           <div className="research-command-center__actions">
             <Link className="research-primary-button" to={`${basePath}/tasks`}>
               Open Tasks
-            </Link>
-            <Link className="research-secondary-button" to={`${basePath}/literature`}>
-              Open Literature
             </Link>
             <Link className="research-secondary-button" to={`${basePath}/drafts`}>
               Open Drafts
@@ -1107,16 +728,6 @@ export function ResearchProjectPage() {
             </p>
           </article>
 
-          <article className="research-command-card research-command-card--literature">
-            <span>Literature summary</span>
-            <div className="research-command-card__stats">
-              <strong>{sources.length}<small>sources</small></strong>
-              <strong>{notes.length + readingNotes.length}<small>notes</small></strong>
-              <strong>{synthesisSections.length}<small>synthesis</small></strong>
-              <strong>{mindMapNodes.length}<small>map nodes</small></strong>
-              <strong>{prismaRecords.length}<small>screening</small></strong>
-            </div>
-          </article>
         </div>
       </section>
 
@@ -1138,7 +749,7 @@ export function ResearchProjectPage() {
             <input
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Search tasks, log, drafts, sources, notes, screening, and submissions."
+              placeholder="Search tasks, log, drafts, and submissions."
             />
           </label>
 
@@ -1161,7 +772,7 @@ export function ResearchProjectPage() {
 
         {!normalizedSearchTerm ? (
           <div className="research-empty-state">
-            Search tasks, drafts, sources, notes, and submissions.
+            Search tasks, drafts, log entries, and submissions.
           </div>
         ) : null}
 
@@ -1212,13 +823,6 @@ export function ResearchProjectPage() {
           description="Move the manuscript through lit, analysis, drafting, revision, and submission."
           meta={researchStages[project.currentStage]}
           to={`${basePath}/stages`}
-        />
-
-        <ResearchWorkspaceTile
-          title="Literature"
-          description="Track sources, themes, quotes, gaps, and source-to-argument links."
-          meta={literatureMeta}
-          to={`${basePath}/literature`}
         />
 
         <ResearchWorkspaceTile

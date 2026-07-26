@@ -40,6 +40,7 @@ export function GradingItemTable({
         <thead>
           <tr>
             <th>Assignment</th>
+            <th>TA</th>
             <th>Due</th>
             <th>Status</th>
             <th>Scores</th>

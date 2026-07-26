@@ -10,6 +10,7 @@ import type {
   TeachingAssistant,
   TeachingCourse,
   TeachingCourseNote,
+  TeachingCourseNoteDraft,
   TeachingCourseTemplate,
   TeachingGradingItem,
   TeachingMeeting,
@@ -27,6 +28,8 @@ import {
   getUserTeachingAssistantsCollectionSegments,
   getUserTeachingCourseDocumentSegments,
   getUserTeachingCourseNoteDocumentSegments,
+  getUserTeachingCourseNoteDraftDocumentSegments,
+  getUserTeachingCourseNoteDraftsCollectionSegments,
   getUserTeachingCourseNotesCollectionSegments,
   getUserTeachingCourseTemplateDocumentSegments,
   getUserTeachingCourseTemplatesCollectionSegments,
@@ -57,6 +60,7 @@ export type TeachingCloudSnapshot = {
   teachingAssistants: TeachingAssistant[];
   officeHourVisits: TeachingOfficeHourVisit[];
   courseNotes: TeachingCourseNote[];
+  courseNoteDrafts: TeachingCourseNoteDraft[];
   resources: TeachingResource[];
   announcementReminders: TeachingAnnouncementReminder[];
   courseTemplates: TeachingCourseTemplate[];
@@ -72,6 +76,7 @@ export type TeachingCloudCounts = {
   teachingAssistants: number;
   officeHourVisits: number;
   courseNotes: number;
+  courseNoteDrafts: number;
   resources: number;
   announcementReminders: number;
   courseTemplates: number;
@@ -82,9 +87,6 @@ export type TeachingMergeResult = TeachingCloudSnapshot & {
   updatedCount: number;
   dedupedCount: number;
 };
-
-export const TEACHING_NOTE_DRAFT_SYNC_NOTE =
-  "Teaching course note draft autosaves stay local-only because draft keys are prefix-based editor state and can collide across browsers, especially the shared 'new' draft key.";
 
 type SyncRecord = {
   id: string;
@@ -318,6 +320,35 @@ export function normalizeTeachingCourseNote(value: unknown) {
   return note ? { ...note, tags: asStringArray(note.tags) } : null;
 }
 
+export function normalizeTeachingCourseNoteDraft(
+  value: unknown,
+): TeachingCourseNoteDraft | null {
+  const draft = normalizeRecord<TeachingCourseNoteDraft>(
+    value,
+    (record) => Boolean(asString(record.courseId)),
+    {
+      title: "",
+      body: "",
+      tags: [],
+      noteType: "other",
+    },
+  );
+
+  if (!draft) {
+    return null;
+  }
+
+  const tags = Array.isArray(draft.tags)
+    ? asStringArray(draft.tags)
+    : [];
+
+  return {
+    ...draft,
+    noteId: asString(draft.noteId),
+    tags,
+  };
+}
+
 export function normalizeTeachingResource(value: unknown) {
   return normalizeRecord<TeachingResource>(
     value,
@@ -409,6 +440,10 @@ export function normalizeTeachingCourseNotes(value: unknown) {
   return normalizeRecords(value, normalizeTeachingCourseNote);
 }
 
+export function normalizeTeachingCourseNoteDrafts(value: unknown) {
+  return normalizeRecords(value, normalizeTeachingCourseNoteDraft);
+}
+
 export function normalizeTeachingResources(value: unknown) {
   return normalizeRecords(value, normalizeTeachingResource);
 }
@@ -431,6 +466,7 @@ function normalizeTeachingSnapshot(snapshot: {
   teachingAssistants: unknown;
   officeHourVisits: unknown;
   courseNotes: unknown;
+  courseNoteDrafts: unknown;
   resources: unknown;
   announcementReminders: unknown;
   courseTemplates: unknown;
@@ -445,6 +481,7 @@ function normalizeTeachingSnapshot(snapshot: {
     teachingAssistants: normalizeTeachingAssistants(snapshot.teachingAssistants),
     officeHourVisits: normalizeTeachingOfficeHourVisits(snapshot.officeHourVisits),
     courseNotes: normalizeTeachingCourseNotes(snapshot.courseNotes),
+    courseNoteDrafts: normalizeTeachingCourseNoteDrafts(snapshot.courseNoteDrafts),
     resources: normalizeTeachingResources(snapshot.resources),
     announcementReminders: normalizeTeachingAnnouncementReminders(
       snapshot.announcementReminders,
@@ -479,6 +516,7 @@ export async function listUserTeachingData(
     teachingAssistants,
     officeHourVisits,
     courseNotes,
+    courseNoteDrafts,
     resources,
     announcementReminders,
     courseTemplates,
@@ -492,6 +530,7 @@ export async function listUserTeachingData(
     listCollectionRecords(getUserTeachingAssistantsCollectionSegments(uid)),
     listCollectionRecords(getUserTeachingOfficeHourVisitsCollectionSegments(uid)),
     listCollectionRecords(getUserTeachingCourseNotesCollectionSegments(uid)),
+    listCollectionRecords(getUserTeachingCourseNoteDraftsCollectionSegments(uid)),
     listCollectionRecords(getUserTeachingResourcesCollectionSegments(uid)),
     listCollectionRecords(
       getUserTeachingAnnouncementRemindersCollectionSegments(uid),
@@ -509,6 +548,7 @@ export async function listUserTeachingData(
     teachingAssistants,
     officeHourVisits,
     courseNotes,
+    courseNoteDrafts,
     resources,
     announcementReminders,
     courseTemplates,
@@ -528,6 +568,7 @@ export function getTeachingCounts(
     teachingAssistants: snapshot.teachingAssistants.length,
     officeHourVisits: snapshot.officeHourVisits.length,
     courseNotes: snapshot.courseNotes.length,
+    courseNoteDrafts: snapshot.courseNoteDrafts.length,
     resources: snapshot.resources.length,
     announcementReminders: snapshot.announcementReminders.length,
     courseTemplates: snapshot.courseTemplates.length,
@@ -622,6 +663,17 @@ export async function batchUploadUserTeachingData(
     batch.set(
       doc(firestore, ...getUserTeachingCourseNoteDocumentSegments(uid, note.id)),
       toFirestoreRecord(note),
+      { merge: true },
+    );
+  });
+
+  normalizedSnapshot.courseNoteDrafts.forEach((draft) => {
+    batch.set(
+      doc(
+        firestore,
+        ...getUserTeachingCourseNoteDraftDocumentSegments(uid, draft.id),
+      ),
+      toFirestoreRecord(draft),
       { merge: true },
     );
   });
@@ -899,6 +951,12 @@ export function mergeTeachingDataForSync(
           normalizeTextKey(note.title),
           note.noteType,
         ].join("|"),
+      totals,
+    ),
+    courseNoteDrafts: mergeSnapshotCollection(
+      localSnapshot.courseNoteDrafts,
+      cloudSnapshot.courseNoteDrafts,
+      (draft) => [draft.courseId, draft.noteId ?? "new"].join("|"),
       totals,
     ),
     resources: mergeSnapshotCollection(

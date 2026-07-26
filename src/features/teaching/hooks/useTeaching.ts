@@ -57,6 +57,7 @@ import type {
   UpdateTeachingSemesterInput,
   UpdateTeachingTaItemInput,
 } from "../types";
+import { teachingSuggestionMarker } from "../utils/teachingSuggestions";
 
 type TeachingRecord = {
   id: string;
@@ -497,11 +498,51 @@ export function useTeaching() {
   }
 
   function createGradingItem(input: NewTeachingGradingItemInput) {
+    const soleActiveAssistants = teachingAssistants.filter(
+      (assistant) => assistant.courseId === input.courseId && assistant.active,
+    );
+    const assignedAssistant =
+      soleActiveAssistants.length === 1 ? soleActiveAssistants[0] : undefined;
     const gradingItem = createRecord<
       NewTeachingGradingItemInput,
       TeachingGradingItem
-    >(input, {});
+    >(
+      {
+        ...input,
+        taId: input.taId ?? assignedAssistant?.id,
+        taName: input.taName ?? assignedAssistant?.name,
+      },
+      {},
+    );
     setGradingItems((currentItems) => [gradingItem, ...currentItems]);
+
+    if (assignedAssistant) {
+      createTaItem({
+        courseId: gradingItem.courseId,
+        taId: assignedAssistant.id,
+        taName: assignedAssistant.name,
+        task: `Grade ${gradingItem.assignment}`,
+        assignmentName: gradingItem.assignment,
+        assignmentDueDate: gradingItem.dueDate || undefined,
+        reminderDueDate: gradingItem.dueDate
+          ? addDays(gradingItem.dueDate, -2)
+          : undefined,
+        followUpDueDate: gradingItem.dueDate || undefined,
+        status: "open",
+        category: "grading",
+        dueDate: gradingItem.dueDate,
+        notes: [
+          `Automatically assigned to ${assignedAssistant.name} because this course has one active TA.`,
+          teachingSuggestionMarker(`${gradingItem.id}:ta-instructions`),
+        ].join("\n"),
+        weeklyComment: "",
+        nextAction: `Complete grading for ${gradingItem.assignment} and report back.`,
+        rubricReminderEnabled: false,
+        gradeNormingEnabled: false,
+        completed: false,
+      });
+    }
+
     return gradingItem;
   }
 

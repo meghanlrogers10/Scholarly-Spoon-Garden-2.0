@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { generateResearchPipelineTasks } from "../data/researchTaskBlueprints";
+import { writeLocalStorageValue } from "../../../shared/utils/localStorageSync";
 import type {
   ResearchProject,
   ResearchTask,
@@ -31,18 +32,16 @@ function loadTasks() {
 }
 
 function saveTasks(tasks: ResearchTask[]) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+  writeLocalStorageValue(STORAGE_KEY, tasks);
 }
 
 export function useResearchTasks() {
   const [tasks, setTasks] = useState<ResearchTask[]>(loadTasks);
 
   function updateTasks(updater: (currentTasks: ResearchTask[]) => ResearchTask[]) {
-    setTasks((currentTasks) => {
-      const updatedTasks = updater(currentTasks);
-      saveTasks(updatedTasks);
-      return updatedTasks;
-    });
+    const updatedTasks = updater(loadTasks());
+    saveTasks(updatedTasks);
+    setTasks(updatedTasks);
   }
 
   function refreshTasks() {

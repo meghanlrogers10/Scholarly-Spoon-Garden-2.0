@@ -22,6 +22,7 @@ import {
   getWorkingBlockDurationMinutes,
 } from "../utils/workingBlockCalendar";
 import { getDayPlannedMinutes } from "../utils/plannedTaskBlocks";
+import { isShutdownReviewTask } from "../utils/shutdownReviewTask";
 
 type EndOfDayReviewModalProps = {
   isOpen: boolean;
@@ -98,7 +99,8 @@ export function EndOfDayReviewModal({
 
     return candidateTaskIds
       .map((id) => taskMap.get(id))
-      .filter((task): task is Task => Boolean(task));
+      .filter((task): task is Task => Boolean(task))
+      .filter((task) => !isShutdownReviewTask(task));
   }, [taskMap, tasks, todayPlannedBlocks, todaySessions]);
   const unfinishedTasks = candidateTasks.filter((task) => task.status !== "done");
   const totalAvailableMinutes =

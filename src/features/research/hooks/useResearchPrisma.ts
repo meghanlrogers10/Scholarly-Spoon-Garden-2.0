@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { writeLocalStorageValue } from "../../../shared/utils/localStorageSync";
 import type {
   ResearchPrismaCriteria,
   ResearchPrismaRecord,
@@ -40,11 +41,11 @@ function loadCriteria() {
 }
 
 function saveRecords(records: ResearchPrismaRecord[]) {
-  window.localStorage.setItem(RECORDS_STORAGE_KEY, JSON.stringify(records));
+  writeLocalStorageValue(RECORDS_STORAGE_KEY, records);
 }
 
 function saveCriteria(criteria: ResearchPrismaCriteria[]) {
-  window.localStorage.setItem(CRITERIA_STORAGE_KEY, JSON.stringify(criteria));
+  writeLocalStorageValue(CRITERIA_STORAGE_KEY, criteria);
 }
 
 function createRecordId(projectId: string) {
@@ -81,11 +82,9 @@ export function useResearchPrisma() {
   function updateRecords(
     updater: (currentRecords: ResearchPrismaRecord[]) => ResearchPrismaRecord[]
   ) {
-    setRecords((currentRecords) => {
-      const updatedRecords = updater(currentRecords);
-      saveRecords(updatedRecords);
-      return updatedRecords;
-    });
+    const updatedRecords = updater(loadRecords());
+    saveRecords(updatedRecords);
+    setRecords(updatedRecords);
   }
 
   function updateCriteria(
@@ -93,11 +92,9 @@ export function useResearchPrisma() {
       currentCriteria: ResearchPrismaCriteria[]
     ) => ResearchPrismaCriteria[]
   ) {
-    setCriteria((currentCriteria) => {
-      const updatedCriteria = updater(currentCriteria);
-      saveCriteria(updatedCriteria);
-      return updatedCriteria;
-    });
+    const updatedCriteria = updater(loadCriteria());
+    saveCriteria(updatedCriteria);
+    setCriteria(updatedCriteria);
   }
 
   function refreshPrisma() {

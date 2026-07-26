@@ -17,6 +17,7 @@ export function TeachingCoursePage() {
     getOfficeHourVisitsForCourse,
     getCourseNotesForCourse,
     getResourcesForCourse,
+    getAnnouncementRemindersForCourse,
   } = useTeaching();
 
   const course = getCourseById(courseId);
@@ -48,6 +49,7 @@ export function TeachingCoursePage() {
   const officeHourVisits = getOfficeHourVisitsForCourse(course.id);
   const courseNotes = getCourseNotesForCourse(course.id);
   const resources = getResourcesForCourse(course.id);
+  const announcementReminders = getAnnouncementRemindersForCourse(course.id);
   const pendingGradingCount = gradingItems.filter(
     (item) => item.status === "pending" || item.status === "in-progress"
   ).length;
@@ -140,6 +142,13 @@ export function TeachingCoursePage() {
           description="Loose course thoughts, what worked, what to change next time."
           meta={`${courseNotes.length} notes`}
           to={`${basePath}/notes`}
+        />
+
+        <TeachingWorkspaceTile
+          title="Announcements"
+          description="Plan student announcements, draft messages, and track what has been posted."
+          meta={`${announcementReminders.length} announcements`}
+          to={`${basePath}/announcements`}
         />
 
         <TeachingWorkspaceTile

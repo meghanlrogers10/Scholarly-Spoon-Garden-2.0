@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { Button } from "../../../shared/ui/Button";
 import { Card } from "../../../shared/ui/Card";
 
 type DashboardActionsCardProps = {
@@ -9,7 +8,10 @@ type DashboardActionsCardProps = {
   manualWorkLogCount: number;
   clarifyLaterCount: number;
   avoidanceRadarCount: number;
+  onStartCheckIn: () => void;
+  onBuildToday: () => void;
   onLogWork: () => void;
+  onShutdownReview: () => void;
 };
 
 export function DashboardActionsCard({
@@ -19,55 +21,65 @@ export function DashboardActionsCard({
   manualWorkLogCount,
   clarifyLaterCount,
   avoidanceRadarCount,
+  onStartCheckIn,
+  onBuildToday,
   onLogWork,
+  onShutdownReview,
 }: DashboardActionsCardProps) {
   return (
-    <Card>
+    <Card className="dashboard-actions-card">
       <div className="card-heading-row">
         <div>
-          <p className="eyebrow">Control Center</p>
-          <h2>Dashboard Actions</h2>
+          <p className="eyebrow">Control center</p>
+          <h2>Quick Actions</h2>
+          <p className="muted-text">Open the main daily planning tools.</p>
         </div>
       </div>
 
       <div className="dashboard-action-grid">
-        <Link className="dashboard-action-tile" to="/tasks">
-          <strong>View all tasks</strong>
-          <span>{todayTaskCount} on today’s plan</span>
-        </Link>
+        <button
+          className="dashboard-action-tile"
+          type="button"
+          onClick={onStartCheckIn}
+        >
+          <strong>Daily Check-In</strong>
+          <span>Set spoons and work blocks</span>
+        </button>
 
-        <Link className="dashboard-action-tile" to="/tasks">
-          <strong>Completed tasks</strong>
+        <button
+          className="dashboard-action-tile"
+          type="button"
+          onClick={onBuildToday}
+        >
+          <strong>Build Today</strong>
+          <span>{todayTaskCount} tasks on today&apos;s plan</span>
+        </button>
+
+        <button className="dashboard-action-tile" type="button" onClick={onLogWork}>
+          <strong>Log Work</strong>
+          <span>{manualWorkLogCount} manual logs</span>
+        </button>
+
+        <button
+          className="dashboard-action-tile"
+          type="button"
+          onClick={onShutdownReview}
+        >
+          <strong>Shutdown Review</strong>
           <span>{completedTaskCount} completed today</span>
-        </Link>
+        </button>
 
         <Link className="dashboard-action-tile" to="/timer-log">
-          <strong>Timer log</strong>
+          <strong>Timer Log</strong>
           <span>{timerSessionCount} timed sessions</span>
         </Link>
 
         <Link className="dashboard-action-tile" to="/mindspace">
-          <strong>Mindspace</strong>
+          <strong>Mindspace Radar</strong>
           <span>
             {clarifyLaterCount} parked · {avoidanceRadarCount} radar
           </span>
         </Link>
-
-<Link className="dashboard-action-tile" to="/settings">
-  <strong>Settings</strong>
-  <span>Calendar hours and app options</span>
-</Link>
-
-        <button className="dashboard-action-tile" onClick={onLogWork}>
-          <strong>Log completed work</strong>
-          <span>{manualWorkLogCount} manual logs</span>
-        </button>
-      </div>
-
-      <div className="dashboard-action-footer">
-        <Button variant="soft" onClick={onLogWork}>
-          + Log work without timer
-        </Button>
       </div>
     </Card>
   );

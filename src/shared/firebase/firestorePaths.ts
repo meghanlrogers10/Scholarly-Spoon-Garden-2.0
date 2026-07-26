@@ -24,6 +24,7 @@ export function getUserFirestorePaths(uid: string) {
     researchLiteratureNotes: `${userRoot}/researchLiteratureNotes`,
     researchReadingNotes: `${userRoot}/researchReadingNotes`,
     researchMindMapNodes: `${userRoot}/researchMindMapNodes`,
+    researchMindMapEdges: `${userRoot}/researchMindMapEdges`,
     researchSynthesisSections: `${userRoot}/researchSynthesisSections`,
     researchPrismaRecords: `${userRoot}/researchPrismaRecords`,
     researchPrismaCriteria: `${userRoot}/researchPrismaCriteria`,
@@ -37,6 +38,7 @@ export function getUserFirestorePaths(uid: string) {
     teachingAssistants: `${userRoot}/teachingAssistants`,
     teachingOfficeHourVisits: `${userRoot}/teachingOfficeHourVisits`,
     teachingCourseNotes: `${userRoot}/teachingCourseNotes`,
+    teachingCourseNoteDrafts: `${userRoot}/teachingCourseNoteDrafts`,
     teachingResources: `${userRoot}/teachingResources`,
     teachingAnnouncementReminders: `${userRoot}/teachingAnnouncementReminders`,
     teachingCourseTemplates: `${userRoot}/teachingCourseTemplates`,
@@ -235,6 +237,17 @@ export function getUserResearchMindMapNodeDocumentSegments(
   return ["users", uid, "researchMindMapNodes", nodeId] as const;
 }
 
+export function getUserResearchMindMapEdgesCollectionSegments(uid: string) {
+  return ["users", uid, "researchMindMapEdges"] as const;
+}
+
+export function getUserResearchMindMapEdgeDocumentSegments(
+  uid: string,
+  edgeId: string,
+) {
+  return ["users", uid, "researchMindMapEdges", edgeId] as const;
+}
+
 export function getUserResearchSynthesisSectionsCollectionSegments(uid: string) {
   return ["users", uid, "researchSynthesisSections"] as const;
 }
@@ -365,6 +378,17 @@ export function getUserTeachingCourseNoteDocumentSegments(
   noteId: string,
 ) {
   return ["users", uid, "teachingCourseNotes", noteId] as const;
+}
+
+export function getUserTeachingCourseNoteDraftsCollectionSegments(uid: string) {
+  return ["users", uid, "teachingCourseNoteDrafts"] as const;
+}
+
+export function getUserTeachingCourseNoteDraftDocumentSegments(
+  uid: string,
+  draftId: string,
+) {
+  return ["users", uid, "teachingCourseNoteDrafts", draftId] as const;
 }
 
 export function getUserTeachingResourcesCollectionSegments(uid: string) {

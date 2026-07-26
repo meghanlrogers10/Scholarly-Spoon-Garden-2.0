@@ -8,6 +8,7 @@ import {
   RESEARCH_LITERATURE_NOTES_STORAGE_KEY,
   RESEARCH_LITERATURE_SOURCES_STORAGE_KEY,
   RESEARCH_LOG_ENTRIES_STORAGE_KEY,
+  RESEARCH_MIND_MAP_EDGES_STORAGE_KEY,
   RESEARCH_MIND_MAP_NODES_STORAGE_KEY,
   RESEARCH_PRISMA_CRITERIA_STORAGE_KEY,
   RESEARCH_PRISMA_RECORDS_STORAGE_KEY,
@@ -81,6 +82,7 @@ import {
   normalizeResearchLiteratureNotes,
   normalizeResearchLiteratureSources,
   normalizeResearchLogEntries,
+  normalizeResearchMindMapEdges,
   normalizeResearchMindMapNodes,
   normalizeResearchPrismaCriteriaList,
   normalizeResearchPrismaRecords,
@@ -143,6 +145,7 @@ import {
   normalizeTeachingAnnouncementReminders,
   normalizeTeachingAssistants,
   normalizeTeachingCourseNotes,
+  normalizeTeachingCourseNoteDrafts,
   normalizeTeachingCourses,
   normalizeTeachingCourseTemplates,
   normalizeTeachingGradingItems,
@@ -153,6 +156,10 @@ import {
   normalizeTeachingSemesters,
   normalizeTeachingTaItems,
 } from "../../../../shared/firebase/teachingCloudService";
+import {
+  readLocalTeachingCourseNoteDrafts,
+  writeLocalTeachingCourseNoteDrafts,
+} from "../../../teaching/utils/teachingNoteDraftStorage";
 import {
   LAST_TEACHING_SYNC_AT_KEY,
   LAST_TEACHING_SYNC_ERROR_KEY,
@@ -250,7 +257,7 @@ export function CloudSaveControl({
   const { status: automaticStatus, queue } = useCloudSaveStatus();
   const [cloudSaveEnabled, setCloudSaveEnabled] = useLocalStorage<boolean>(
     CLOUD_SAVE_ENABLED_KEY,
-    false,
+    true,
   );
   const [lastCloudSaveSyncAt, setLastCloudSaveSyncAt] = useLocalStorage<string>(
     LAST_CLOUD_SAVE_SYNC_AT_KEY,
@@ -443,6 +450,8 @@ export function CloudSaveControl({
     useLocalStorage<unknown[]>(RESEARCH_READING_NOTES_STORAGE_KEY, []);
   const [storedResearchMindMapNodes, setStoredResearchMindMapNodes] =
     useLocalStorage<unknown[]>(RESEARCH_MIND_MAP_NODES_STORAGE_KEY, []);
+  const [storedResearchMindMapEdges, setStoredResearchMindMapEdges] =
+    useLocalStorage<unknown[]>(RESEARCH_MIND_MAP_EDGES_STORAGE_KEY, []);
   const [storedResearchSynthesisSections, setStoredResearchSynthesisSections] =
     useLocalStorage<unknown[]>(RESEARCH_SYNTHESIS_SECTIONS_STORAGE_KEY, []);
   const [storedResearchPrismaRecords, setStoredResearchPrismaRecords] =
@@ -654,6 +663,9 @@ export function CloudSaveControl({
         storedTeachingOfficeHourVisits,
       ),
       courseNotes: normalizeTeachingCourseNotes(storedTeachingCourseNotes),
+      courseNoteDrafts: normalizeTeachingCourseNoteDrafts(
+        readLocalTeachingCourseNoteDrafts(),
+      ),
       resources: normalizeTeachingResources(storedTeachingResources),
       announcementReminders: normalizeTeachingAnnouncementReminders(
         storedTeachingAnnouncementReminders,
@@ -675,12 +687,13 @@ export function CloudSaveControl({
     setStoredTeachingAssistants(mergeResult.teachingAssistants);
     setStoredTeachingOfficeHourVisits(mergeResult.officeHourVisits);
     setStoredTeachingCourseNotes(mergeResult.courseNotes);
+    writeLocalTeachingCourseNoteDrafts(mergeResult.courseNoteDrafts);
     setStoredTeachingResources(mergeResult.resources);
     setStoredTeachingAnnouncementReminders(mergeResult.announcementReminders);
     setStoredTeachingCourseTemplates(mergeResult.courseTemplates);
 
     const counts = getTeachingCounts(mergeResult);
-    return `Teaching merged. ${counts.semesters} semesters, ${counts.courses} courses, ${counts.gradingItems} grading items.`;
+    return `Teaching merged. ${counts.semesters} semesters, ${counts.courses} courses, ${counts.gradingItems} grading items, and ${counts.courseNoteDrafts} note drafts.`;
   }
 
   async function syncResearch(uid: string) {
@@ -698,6 +711,7 @@ export function CloudSaveControl({
       ),
       readingNotes: normalizeResearchReadingNotes(storedResearchReadingNotes),
       mindMapNodes: normalizeResearchMindMapNodes(storedResearchMindMapNodes),
+      mindMapEdges: normalizeResearchMindMapEdges(storedResearchMindMapEdges),
       synthesisSections: normalizeResearchSynthesisSections(
         storedResearchSynthesisSections,
       ),
@@ -719,6 +733,7 @@ export function CloudSaveControl({
     setStoredResearchLiteratureNotes(mergeResult.literatureNotes);
     setStoredResearchReadingNotes(mergeResult.readingNotes);
     setStoredResearchMindMapNodes(mergeResult.mindMapNodes);
+    setStoredResearchMindMapEdges(mergeResult.mindMapEdges);
     setStoredResearchSynthesisSections(mergeResult.synthesisSections);
     setStoredResearchPrismaRecords(mergeResult.prismaRecords);
     setStoredResearchPrismaCriteria(mergeResult.prismaCriteria);
@@ -728,7 +743,7 @@ export function CloudSaveControl({
       uploadResult.skippedLargeRecords.length > 0
         ? ` Skipped ${uploadResult.skippedLargeRecords.length} oversized local records for cloud upload; local copies were preserved.`
         : "";
-    return `Research merged. ${counts.projects} projects, ${counts.tasks} tasks, ${counts.literatureSources} sources.${skippedMessage}`;
+    return `Research merged. ${counts.projects} projects, ${counts.tasks} tasks, ${counts.literatureSources} sources, ${counts.literatureNotes} notes, ${counts.mindMapNodes} map nodes, ${counts.mindMapEdges} map edges, ${counts.prismaRecords} PRISMA records.${skippedMessage}`;
   }
 
   async function runArea(area: CloudSaveArea, uid: string) {
@@ -922,6 +937,7 @@ export function CloudSaveControl({
           {lastResults.map((result) => (
             <span key={result.area}>
               {result.label}: {result.ok ? "synced" : "needs attention"}
+              {!result.ok ? ` - ${result.message}` : ""}
             </span>
           ))}
         </div>

@@ -5,6 +5,8 @@ import { Card } from "../../../shared/ui/Card";
 type WorkingSessionsCardProps = {
   sessions: TimerSession[];
   manualWorkLogs: ManualWorkLogEntry[];
+  teachingMinutes?: number;
+  teachingCount?: number;
 };
 
 type DashboardWorkEntry = {
@@ -72,6 +74,8 @@ function getManualDurationSeconds(entry: ManualWorkLogEntry) {
 export function WorkingSessionsCard({
   sessions,
   manualWorkLogs,
+  teachingMinutes = 0,
+  teachingCount = 0,
 }: WorkingSessionsCardProps) {
   const timerEntries: DashboardWorkEntry[] = sessions.map((session) => ({
     id: `timer-${session.id}`,
@@ -100,6 +104,7 @@ export function WorkingSessionsCard({
     (sum, entry) => sum + (entry.durationSeconds || 0),
     0,
   );
+  const workCountSeconds = totalTodaySeconds + teachingMinutes * 60;
 
   return (
     <Card className="hint-card analytics-card" id="workingSessionsCard">
@@ -109,22 +114,25 @@ export function WorkingSessionsCard({
           <h2>Working Sessions</h2>
         </div>
 
-        <span className="pill">{todayEntries.length} today</span>
+        <span className="pill">{todayEntries.length + teachingCount} today</span>
       </div>
 
       <div className="working-session-summary working-session-summary-compact">
         <div>
-          <strong>{formatDuration(totalTodaySeconds)}</strong>
-          <span>tracked today</span>
+          <strong>{formatDuration(workCountSeconds)}</strong>
+          <span>work + teaching today</span>
         </div>
 
         <div>
           <strong>{todayEntries.length}</strong>
-          <span>logs today</span>
+          <span>logged sessions</span>
         </div>
       </div>
 
       <p className="muted-text">
+        {teachingMinutes > 0
+          ? `${formatDuration(teachingMinutes * 60)} scheduled teaching is included in the work count. `
+          : ""}
         Full session history lives in Focus Bloom Log. Keep the dashboard light.
       </p>
     </Card>

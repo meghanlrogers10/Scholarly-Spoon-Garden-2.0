@@ -32,7 +32,7 @@ export function TaskSyncPanel({
   const { tasks, setTasks } = useTaskBridge();
   const [taskSyncEnabled, setTaskSyncEnabled] = useLocalStorage<boolean>(
     TASK_SYNC_ENABLED_KEY,
-    false,
+    true,
   );
   const [lastTaskSyncAt, setLastTaskSyncAt] = useLocalStorage<string>(
     LAST_TASK_SYNC_AT_KEY,

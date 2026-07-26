@@ -14,6 +14,7 @@ import {
   getCapacityWarnings,
   getWorkingBlockRemainingMinutes,
 } from "../utils/plannedTaskBlocks";
+import { isTeachingWorkingBlock } from "../utils/teachingScheduleBlocks";
 
 type TodayBuilderCardProps = {
   tasks: Task[];
@@ -80,8 +81,13 @@ function TaskList({
             if (!task) {
               return null;
             }
+            const selectableWorkingBlocks = workingBlocks.filter(
+              (block) =>
+                !isTeachingWorkingBlock(block) &&
+                getWorkingBlockRemainingMinutes(block, plannedBlocks) > 0,
+            );
             const selectedWorkingBlockId =
-              selectedBlockByTaskId?.[task.id] ?? workingBlocks[0]?.id ?? "";
+              selectedBlockByTaskId?.[task.id] ?? selectableWorkingBlocks[0]?.id ?? "";
             const alreadyPlanned = plannedBlocks.some(
               (block) => block.taskId === task.id,
             );
@@ -98,15 +104,15 @@ function TaskList({
                   <div className="today-builder-plan-row">
                     <select
                       value={selectedWorkingBlockId}
-                      disabled={workingBlocks.length === 0}
+                      disabled={selectableWorkingBlocks.length === 0}
                       onChange={(event) =>
                         onSelectBlock?.(task.id, event.target.value)
                       }
                     >
-                      {workingBlocks.length === 0 ? (
+                      {selectableWorkingBlocks.length === 0 ? (
                         <option value="">No working blocks</option>
                       ) : (
-                        workingBlocks.map((block) => (
+                        selectableWorkingBlocks.map((block) => (
                           <option key={block.id} value={block.id}>
                             {block.startTime}-{block.endTime} ·{" "}
                             {formatWorkingBlockDuration(
@@ -185,9 +191,13 @@ export function TodayBuilderCard({
     <Card className="today-builder-card">
       <div className="card-heading-row">
         <div>
-          <p className="eyebrow">Planning brain</p>
+          <p className="eyebrow">Recommendation engine</p>
           <h2>Today Builder</h2>
-          <p className="muted-text">A reality check before the day gets loud.</p>
+          <p className="muted-text">
+            Recommendations reflect mode, due dates, spoons, estimates, and
+            available blocks. Generate a realistic plan, then adjust assignments
+            in Today&apos;s Work Blocks.
+          </p>
         </div>
 
         <div className="today-builder-actions">
@@ -282,6 +292,18 @@ export function TodayBuilderCard({
           taskIds={result.buckets.backupTaskIds}
           taskById={taskById}
           emptyText="No backup tasks found."
+        />
+        <TaskList
+          title="Shutdown task"
+          taskIds={result.buckets.shutdownTaskIds}
+          taskById={taskById}
+          emptyText="No shutdown task is surfaced yet."
+          workingBlocks={workingBlocks}
+          plannedBlocks={plannedBlocks}
+          canPlan
+          selectedBlockByTaskId={selectedBlockByTaskId}
+          onSelectBlock={handleSelectBlock}
+          onPlanTaskInBlock={onPlanTaskInBlock}
         />
         <TaskList
           title="Postpone"

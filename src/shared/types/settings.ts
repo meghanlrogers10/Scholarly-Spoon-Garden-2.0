@@ -1,4 +1,8 @@
 import type { PlanningMode } from "./planning";
+import {
+  defaultGoogleCalendarSyncSettings,
+  type GoogleCalendarSyncSettings,
+} from "./googleCalendarSync";
 export type { PlanningMode } from "./planning";
 
 export type CalendarDensity = "compact" | "comfortable";
@@ -17,6 +21,7 @@ export type AppSettings = {
   showWeekends: boolean;
   calendarDensity: CalendarDensity;
   showSampleCalendarEvents: boolean;
+  googleCalendarSync: GoogleCalendarSyncSettings;
 
   dailyCheckInEnabled: boolean;
   defaultPlanningMode: PlanningMode;
@@ -47,6 +52,7 @@ export const defaultAppSettings: AppSettings = {
   showWeekends: true,
   calendarDensity: "comfortable",
   showSampleCalendarEvents: false,
+  googleCalendarSync: defaultGoogleCalendarSyncSettings,
 
   dailyCheckInEnabled: true,
   defaultPlanningMode: "balanced",
@@ -58,7 +64,7 @@ export const defaultAppSettings: AppSettings = {
   timerPomodoroMinutes: 25,
   timerBreakMinutes: 5,
   longRunningTimerWarningMinutes: 120,
-  timerSoundAlerts: false,
+  timerSoundAlerts: true,
   timerVisualAlerts: true,
   timerReflectionLevel: "light",
 

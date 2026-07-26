@@ -25,6 +25,7 @@ export type WorkingBlock = {
   plannedTaskIds?: string[];
   actualSessionIds?: string[];
   notes?: string;
+  source?: "teaching-meeting";
 };
 
 export type DailyCheckIn = {
@@ -67,6 +68,7 @@ export type TodayPlanBucket = {
   backupTaskIds: string[];
   postponeTaskIds: string[];
   quickWinTaskIds: string[];
+  shutdownTaskIds: string[];
 };
 
 export type TodayBuilderResult = {

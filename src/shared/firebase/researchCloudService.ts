@@ -10,6 +10,7 @@ import type {
   ResearchLiteratureNote,
   ResearchLiteratureReadingNote,
   ResearchLiteratureSource,
+  ResearchMindMapEdge,
   ResearchLogEntry,
   ResearchMindMapNode,
   ResearchPrismaCriteria,
@@ -31,6 +32,8 @@ import {
   getUserResearchLogEntryDocumentSegments,
   getUserResearchMindMapNodeDocumentSegments,
   getUserResearchMindMapNodesCollectionSegments,
+  getUserResearchMindMapEdgeDocumentSegments,
+  getUserResearchMindMapEdgesCollectionSegments,
   getUserResearchPrismaCriteriaCollectionSegments,
   getUserResearchPrismaCriteriaDocumentSegments,
   getUserResearchPrismaRecordDocumentSegments,
@@ -59,6 +62,7 @@ export type ResearchCloudSnapshot = {
   literatureNotes: ResearchLiteratureNote[];
   readingNotes: ResearchLiteratureReadingNote[];
   mindMapNodes: ResearchMindMapNode[];
+  mindMapEdges: ResearchMindMapEdge[];
   synthesisSections: ResearchSynthesisSection[];
   prismaRecords: ResearchPrismaRecord[];
   prismaCriteria: ResearchPrismaCriteria[];
@@ -107,6 +111,7 @@ const emptyCounts: ResearchCloudCounts = {
   literatureNotes: 0,
   readingNotes: 0,
   mindMapNodes: 0,
+  mindMapEdges: 0,
   synthesisSections: 0,
   prismaRecords: 0,
   prismaCriteria: 0,
@@ -354,6 +359,14 @@ export function normalizeResearchMindMapNode(value: unknown) {
     : null;
 }
 
+export function normalizeResearchMindMapEdge(value: unknown) {
+  return normalizeRecord<ResearchMindMapEdge>(
+    value,
+    (record) => Boolean(asString(record.projectId)),
+    "research-mindmap-edge",
+  );
+}
+
 export function normalizeResearchSynthesisSection(value: unknown) {
   const section = normalizeRecord<ResearchSynthesisSection>(
     value,
@@ -437,6 +450,10 @@ export function normalizeResearchMindMapNodes(value: unknown) {
   return normalizeRecords(value, normalizeResearchMindMapNode);
 }
 
+export function normalizeResearchMindMapEdges(value: unknown) {
+  return normalizeRecords(value, normalizeResearchMindMapEdge);
+}
+
 export function normalizeResearchSynthesisSections(value: unknown) {
   return normalizeRecords(value, normalizeResearchSynthesisSection);
 }
@@ -463,6 +480,7 @@ function normalizeResearchSnapshot(snapshot: {
   literatureNotes: unknown;
   readingNotes: unknown;
   mindMapNodes: unknown;
+  mindMapEdges: unknown;
   synthesisSections: unknown;
   prismaRecords: unknown;
   prismaCriteria: unknown;
@@ -479,6 +497,7 @@ function normalizeResearchSnapshot(snapshot: {
     literatureNotes: normalizeResearchLiteratureNotes(snapshot.literatureNotes),
     readingNotes: normalizeResearchReadingNotes(snapshot.readingNotes),
     mindMapNodes: normalizeResearchMindMapNodes(snapshot.mindMapNodes),
+    mindMapEdges: normalizeResearchMindMapEdges(snapshot.mindMapEdges),
     synthesisSections: normalizeResearchSynthesisSections(
       snapshot.synthesisSections,
     ),
@@ -513,6 +532,7 @@ export async function listUserResearchData(
     literatureNotes,
     readingNotes,
     mindMapNodes,
+    mindMapEdges,
     synthesisSections,
     prismaRecords,
     prismaCriteria,
@@ -526,6 +546,7 @@ export async function listUserResearchData(
     listCollectionRecords(getUserResearchLiteratureNotesCollectionSegments(uid)),
     listCollectionRecords(getUserResearchReadingNotesCollectionSegments(uid)),
     listCollectionRecords(getUserResearchMindMapNodesCollectionSegments(uid)),
+    listCollectionRecords(getUserResearchMindMapEdgesCollectionSegments(uid)),
     listCollectionRecords(getUserResearchSynthesisSectionsCollectionSegments(uid)),
     listCollectionRecords(getUserResearchPrismaRecordsCollectionSegments(uid)),
     listCollectionRecords(getUserResearchPrismaCriteriaCollectionSegments(uid)),
@@ -541,6 +562,7 @@ export async function listUserResearchData(
     literatureNotes,
     readingNotes,
     mindMapNodes,
+    mindMapEdges,
     synthesisSections,
     prismaRecords,
     prismaCriteria,
@@ -560,6 +582,7 @@ export function getResearchCounts(
     literatureNotes: snapshot.literatureNotes.length,
     readingNotes: snapshot.readingNotes.length,
     mindMapNodes: snapshot.mindMapNodes.length,
+    mindMapEdges: snapshot.mindMapEdges.length,
     synthesisSections: snapshot.synthesisSections.length,
     prismaRecords: snapshot.prismaRecords.length,
     prismaCriteria: snapshot.prismaCriteria.length,
@@ -664,6 +687,9 @@ export async function batchUploadUserResearchData(
   );
   await addCollection("mindMapNodes", normalizedSnapshot.mindMapNodes, (userId, id) =>
     getUserResearchMindMapNodeDocumentSegments(userId, id),
+  );
+  await addCollection("mindMapEdges", normalizedSnapshot.mindMapEdges, (userId, id) =>
+    getUserResearchMindMapEdgeDocumentSegments(userId, id),
   );
   await addCollection(
     "synthesisSections",
@@ -935,6 +961,18 @@ export function mergeResearchDataForSync(
           node.sourceId ?? "",
           node.noteId ?? "",
           node.synthesisSectionId ?? "",
+        ].join("|"),
+      totals,
+    ),
+    mindMapEdges: mergeSnapshotCollection(
+      localSnapshot.mindMapEdges,
+      cloudSnapshot.mindMapEdges,
+      (edge) =>
+        [
+          edge.projectId,
+          edge.sourceNodeId ?? edge.sourceId ?? "",
+          edge.targetNodeId ?? edge.targetId ?? "",
+          normalizeTextKey(edge.label),
         ].join("|"),
       totals,
     ),

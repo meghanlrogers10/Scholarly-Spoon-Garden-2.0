@@ -43,7 +43,7 @@ export function MindspaceSyncPanel({
     unknown[]
   >(MINDSPACE_GOALS_STORAGE_KEY, []);
   const [mindspaceSyncEnabled, setMindspaceSyncEnabled] =
-    useLocalStorage<boolean>(MINDSPACE_SYNC_ENABLED_KEY, false);
+    useLocalStorage<boolean>(MINDSPACE_SYNC_ENABLED_KEY, true);
   const [lastMindspaceSyncAt, setLastMindspaceSyncAt] = useLocalStorage<string>(
     LAST_MINDSPACE_SYNC_AT_KEY,
     "",

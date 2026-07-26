@@ -3,9 +3,6 @@ import { useLocation } from "react-router-dom";
 import { ProjectEditModal } from "../components/ProjectEditModal";
 import { ProjectWizardModal } from "../components/ProjectWizardModal";
 import { ResearchProjectGrid } from "../components/ResearchProjectGrid";
-import { useResearchLiterature } from "../hooks/useResearchLiterature";
-import { useResearchLiteratureNotes } from "../hooks/useResearchLiteratureNotes";
-import { useResearchLiteratureReadingNotes } from "../hooks/useResearchLiteratureReadingNotes";
 import { useResearchProjects } from "../hooks/useResearchProjects";
 import { useResearchTasks } from "../hooks/useResearchTasks";
 import type { NewResearchProjectInput, ResearchProject } from "../types";
@@ -38,16 +35,9 @@ export function ResearchPage() {
     getTasksForProject,
     refreshTasks,
   } = useResearchTasks();
-  const { getSourcesForProject, refreshSources } = useResearchLiterature();
-  const { getNotesForProject, refreshNotes } = useResearchLiteratureNotes();
-  const { getReadingNotesForProject, refreshReadingNotes } =
-    useResearchLiteratureReadingNotes();
 
   useEffect(() => {
     refreshTasks();
-    refreshSources();
-    refreshNotes();
-    refreshReadingNotes();
   // Refresh localStorage-backed research overview data only on route transitions.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key]);
@@ -69,10 +59,6 @@ export function ResearchPage() {
         ...project,
         taskCount: projectTasks.length,
         completedTaskCount: completedTasks.length,
-        literatureCount: getSourcesForProject(project.id).length,
-        notesCount:
-          getNotesForProject(project.id).length +
-          getReadingNotesForProject(project.id).length,
         nextAction:
           nextOpenTask?.title ??
           "All listed tasks are done. Choose the next concrete move.",
@@ -91,9 +77,9 @@ export function ResearchPage() {
           <p className="eyebrow">Research</p>
           <h1>Your manuscript garden.</h1>
           <p>
-            Projects, stages, literature, research logs, drafts, and submissions
-            live here. The goal is simple: know what matters next without
-            reopening every project in your head.
+            Projects, stages, research logs, drafts, and submissions live here.
+            The goal is simple: know what matters next without reopening every
+            project in your head.
           </p>
         </div>
 

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { writeLocalStorageValue } from "../../../shared/utils/localStorageSync";
 import type {
   ResearchLiteratureNote,
   ResearchLiteratureNoteInput,
@@ -28,7 +29,7 @@ function loadNotes() {
 }
 
 function saveNotes(notes: ResearchLiteratureNote[]) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+  writeLocalStorageValue(STORAGE_KEY, notes);
 }
 
 export function useResearchLiteratureNotes() {
@@ -39,11 +40,9 @@ export function useResearchLiteratureNotes() {
       currentNotes: ResearchLiteratureNote[]
     ) => ResearchLiteratureNote[]
   ) {
-    setNotes((currentNotes) => {
-      const updatedNotes = updater(currentNotes);
-      saveNotes(updatedNotes);
-      return updatedNotes;
-    });
+    const updatedNotes = updater(loadNotes());
+    saveNotes(updatedNotes);
+    setNotes(updatedNotes);
   }
 
   function refreshNotes() {

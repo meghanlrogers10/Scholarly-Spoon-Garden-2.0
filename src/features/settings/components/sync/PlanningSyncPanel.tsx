@@ -53,7 +53,7 @@ export function PlanningSyncPanel({
   );
   const [planningSyncEnabled, setPlanningSyncEnabled] = useLocalStorage<boolean>(
     PLANNING_SYNC_ENABLED_KEY,
-    false,
+    true,
   );
   const [lastPlanningSyncAt, setLastPlanningSyncAt] = useLocalStorage<string>(
     LAST_PLANNING_SYNC_AT_KEY,

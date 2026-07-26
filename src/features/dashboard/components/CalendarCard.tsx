@@ -47,6 +47,8 @@ const sourceIconMap: Record<CalendarSource, string> = {
   task: "📌",
   "working-block": "🕰️",
   "planned-task": "🧩",
+  "teaching-meeting": "🎓",
+  "external-google": "G",
 };
 
 function addDays(date: Date, days: number) {
@@ -186,6 +188,8 @@ function getSourceLabel(source: CalendarSource) {
   if (source === "task") return "Task";
   if (source === "working-block") return "Available work time";
   if (source === "planned-task") return "Planned task";
+  if (source === "teaching-meeting") return "Teaching meeting";
+  if (source === "external-google") return "Google Calendar";
   return "Manual";
 }
 
@@ -204,8 +208,22 @@ function getEventMetaLabel(item: CalendarItem) {
       : item.workingBlockStatus ?? "planned";
   }
 
+  if (item.source === "teaching-meeting") {
+    return item.endTime
+      ? `${item.time}-${item.endTime} · teaching`
+      : "Teaching · all day";
+  }
+
   if (item.source === "task") {
     return item.completed ? "Completed task" : "Due task";
+  }
+
+  if (item.source === "external-google") {
+    if (item.isAllDay) return "Google Calendar · all day";
+
+    return item.endTime
+      ? `${item.time}-${item.endTime} · Google Calendar`
+      : "Google Calendar";
   }
 
   return item.time || getSourceLabel(item.source);
@@ -225,6 +243,8 @@ function CalendarEventBlock({
     getCategoryClass(item.category),
     item.source === "working-block" ? "working-block" : "",
     item.source === "planned-task" ? "planned-task" : "",
+    item.source === "teaching-meeting" ? "teaching-meeting" : "",
+    item.source === "external-google" ? "external-google" : "",
     item.workingBlockStatus ? `is-${item.workingBlockStatus}` : "",
     item.plannedTaskBlockStatus ? `is-${item.plannedTaskBlockStatus}` : "",
     item.completed ? "is-completed" : "",
@@ -599,6 +619,7 @@ const [selectedItem, setSelectedItem] = useState<CalendarItem | null>(null);
         item.completed ? "is-completed" : "",
         item.source === "working-block" ? "working-block" : "",
         item.source === "planned-task" ? "planned-task" : "",
+        item.source === "external-google" ? "external-google" : "",
         item.workingBlockStatus ? `is-${item.workingBlockStatus}` : "",
         item.plannedTaskBlockStatus ? `is-${item.plannedTaskBlockStatus}` : "",
       ].join(" ")}

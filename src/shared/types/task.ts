@@ -27,6 +27,7 @@ export type TaskType =
   | "teaching"
   | "research"
   | "mindspace"
+  | "shutdown-review"
   | "other";
 
 export type TaskSource =
@@ -47,6 +48,7 @@ export type TaskSource =
   | "review-letter"
   | "advising-item"
   | "admin-other"
+  | "daily-planning"
   | "mindspace-item";
 
 export type Task = {

@@ -76,6 +76,14 @@ const restartChecklist = [
   "Do not add a new major feature until the current sprint is committed.",
 ];
 
+const researchCloudSaveQaChecklist = [
+  "Create/edit a Research project, task, log entry, draft, submission/journal record.",
+  "Add/edit a literature source, literature note, reading note, synthesis item, PRISMA record/criteria.",
+  "Add/edit a mind map node and confirm any edge data survives sync.",
+  "Run Cloud Save / Sync Now, reload, and confirm local data remains.",
+  "Sign in on a second browser/device and confirm Research data appears after sync.",
+];
+
 export function SourcePage() {
   return (
     <section className="page-stack">
@@ -135,6 +143,16 @@ export function SourcePage() {
             <li key={item}>{item}</li>
           ))}
         </ol>
+      </Card>
+
+      <Card>
+        <p className="eyebrow">Research Cloud Save QA</p>
+        <h2>Before calling Research sync stable</h2>
+        <ul>
+          {researchCloudSaveQaChecklist.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
       </Card>
 
       <div className="card-grid">

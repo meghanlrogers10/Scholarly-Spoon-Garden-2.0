@@ -10,6 +10,7 @@ import { AppShell } from "./layout/AppShell";
 import { AuthProvider } from "../shared/auth/AuthProvider";
 import { useAuthUser } from "../shared/auth/useAuthUser";
 import { DashboardPage } from "../features/dashboard/DashboardPage";
+import { DailyPlanningPage } from "../features/dashboard/pages/DailyPlanningPage";
 import { TasksPage } from "../features/tasks/pages/TasksPage";
 import { ResearchPage } from "../features/research/pages/ResearchPage";
 import { TeachingPage } from "../features/teaching/pages/TeachingPage";
@@ -31,7 +32,6 @@ import { ResearchProjectPage } from "../features/research/pages/ResearchProjectP
 import { ResearchLogPage } from "../features/research/pages/ResearchLogPage";
 import { ResearchDraftsPage } from "../features/research/pages/ResearchDraftsPage";
 import { ResearchSubmissionsPage } from "../features/research/pages/ResearchSubmissionsPage";
-import { ResearchLiteraturePage } from "../features/research/pages/ResearchLiteraturePage";
 import { TeachingCoursePage } from "../features/teaching/pages/TeachingCoursePage";
 import { TeachingNotebookPage } from "../features/teaching/pages/TeachingNotebookPage";
 import { ClassPrepPage } from "../features/teaching/pages/ClassPrepPage";
@@ -111,15 +111,12 @@ export function App() {
 
           <Route element={<ProtectedLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/dashboard/daily-plan" element={<DailyPlanningPage />} />
             <Route path="/tasks" element={<TasksPage />} />
             <Route path="/research" element={<ResearchPage />} />
             <Route path="/research/:projectId" element={<ResearchProjectPage />} />
             <Route path="/research/:projectId/tasks" element={<ResearchTasksPage />} />
             <Route path="/research/:projectId/stages" element={<ResearchStagesPage />} />
-            <Route
-              path="/research/:projectId/literature"
-              element={<ResearchLiteraturePage />}
-            />
             <Route path="/research/:projectId/notes" element={<ResearchLogPage />} />
             <Route
               path="/research/:projectId/drafts"

@@ -63,7 +63,7 @@ export function ServiceSyncPanel({
     useLocalStorage<unknown[]>(SERVICE_BOUNDARY_LESSONS_STORAGE_KEY, []);
   const [serviceSyncEnabled, setServiceSyncEnabled] = useLocalStorage<boolean>(
     SERVICE_SYNC_ENABLED_KEY,
-    false,
+    true,
   );
   const [lastServiceSyncAt, setLastServiceSyncAt] = useLocalStorage<string>(
     LAST_SERVICE_SYNC_AT_KEY,

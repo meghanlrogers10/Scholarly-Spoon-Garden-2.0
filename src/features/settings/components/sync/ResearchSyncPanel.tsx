@@ -4,6 +4,7 @@ import {
   RESEARCH_LITERATURE_NOTES_STORAGE_KEY,
   RESEARCH_LITERATURE_SOURCES_STORAGE_KEY,
   RESEARCH_LOG_ENTRIES_STORAGE_KEY,
+  RESEARCH_MIND_MAP_EDGES_STORAGE_KEY,
   RESEARCH_MIND_MAP_NODES_STORAGE_KEY,
   RESEARCH_PRISMA_CRITERIA_STORAGE_KEY,
   RESEARCH_PRISMA_RECORDS_STORAGE_KEY,
@@ -23,6 +24,7 @@ import {
   normalizeResearchLiteratureNotes,
   normalizeResearchLiteratureSources,
   normalizeResearchLogEntries,
+  normalizeResearchMindMapEdges,
   normalizeResearchMindMapNodes,
   normalizeResearchPrismaCriteriaList,
   normalizeResearchPrismaRecords,
@@ -78,6 +80,8 @@ export function ResearchSyncPanel({
     useLocalStorage<unknown[]>(RESEARCH_READING_NOTES_STORAGE_KEY, []);
   const [storedResearchMindMapNodes, setStoredResearchMindMapNodes] =
     useLocalStorage<unknown[]>(RESEARCH_MIND_MAP_NODES_STORAGE_KEY, []);
+  const [storedResearchMindMapEdges, setStoredResearchMindMapEdges] =
+    useLocalStorage<unknown[]>(RESEARCH_MIND_MAP_EDGES_STORAGE_KEY, []);
   const [storedResearchSynthesisSections, setStoredResearchSynthesisSections] =
     useLocalStorage<unknown[]>(RESEARCH_SYNTHESIS_SECTIONS_STORAGE_KEY, []);
   const [storedResearchPrismaRecords, setStoredResearchPrismaRecords] =
@@ -85,7 +89,7 @@ export function ResearchSyncPanel({
   const [storedResearchPrismaCriteria, setStoredResearchPrismaCriteria] =
     useLocalStorage<unknown[]>(RESEARCH_PRISMA_CRITERIA_STORAGE_KEY, []);
   const [researchSyncEnabled, setResearchSyncEnabled] =
-    useLocalStorage<boolean>(RESEARCH_SYNC_ENABLED_KEY, false);
+    useLocalStorage<boolean>(RESEARCH_SYNC_ENABLED_KEY, true);
   const [lastResearchSyncAt, setLastResearchSyncAt] = useLocalStorage<string>(
     LAST_RESEARCH_SYNC_AT_KEY,
     "",
@@ -122,6 +126,7 @@ export function ResearchSyncPanel({
     ),
     readingNotes: normalizeResearchReadingNotes(storedResearchReadingNotes),
     mindMapNodes: normalizeResearchMindMapNodes(storedResearchMindMapNodes),
+    mindMapEdges: normalizeResearchMindMapEdges(storedResearchMindMapEdges),
     synthesisSections: normalizeResearchSynthesisSections(
       storedResearchSynthesisSections,
     ),
@@ -167,6 +172,7 @@ export function ResearchSyncPanel({
     setStoredResearchLiteratureNotes(snapshot.literatureNotes);
     setStoredResearchReadingNotes(snapshot.readingNotes);
     setStoredResearchMindMapNodes(snapshot.mindMapNodes);
+    setStoredResearchMindMapEdges(snapshot.mindMapEdges);
     setStoredResearchSynthesisSections(snapshot.synthesisSections);
     setStoredResearchPrismaRecords(snapshot.prismaRecords);
     setStoredResearchPrismaCriteria(snapshot.prismaCriteria);
@@ -194,7 +200,7 @@ export function ResearchSyncPanel({
       setCloudResearchCounts(counts);
       setResearchSyncStatus({
         tone: "success",
-        message: `Cloud has ${counts.projects} projects, ${counts.tasks} tasks, ${counts.logEntries} log entries, ${counts.drafts} drafts, ${counts.submissions} submissions, ${counts.literatureSources} sources, ${counts.literatureNotes} source notes, ${counts.readingNotes} reading notes, ${counts.mindMapNodes} mind map nodes, ${counts.synthesisSections} synthesis sections, ${counts.prismaRecords} PRISMA records, and ${counts.prismaCriteria} PRISMA criteria sets.`,
+        message: `Cloud has ${counts.projects} projects, ${counts.tasks} tasks, ${counts.logEntries} log entries, ${counts.drafts} drafts, ${counts.submissions} submissions, ${counts.literatureSources} sources, ${counts.literatureNotes} source notes, ${counts.readingNotes} reading notes, ${counts.mindMapNodes} mind map nodes, ${counts.mindMapEdges} mind map edges, ${counts.synthesisSections} synthesis sections, ${counts.prismaRecords} PRISMA records, and ${counts.prismaCriteria} PRISMA criteria sets.`,
       });
     } catch (error) {
       recordResearchSyncError(error);
@@ -272,7 +278,7 @@ export function ResearchSyncPanel({
     <SyncPanel
       eyebrow="Research"
       title="Manual Research cloud sync"
-      description="Only Research projects, Research tasks, logs, drafts, submissions, literature records, notes, mind map nodes, synthesis sections, and PRISMA records use this path. Research pages still read and write localStorage first."
+      description="Only Research projects, Research tasks, logs, drafts, submissions, literature records, notes, mind map nodes and edges, synthesis sections, and PRISMA records use this path. Research pages still read and write localStorage first."
       statusLabel={researchSyncEnabled ? "Research sync enabled" : "Manual opt-in"}
     >
       <div className="settings-backup-summary">
@@ -285,12 +291,13 @@ export function ResearchSyncPanel({
         <span>{localResearchCounts.literatureNotes} local source notes</span>
         <span>{localResearchCounts.readingNotes} local reading notes</span>
         <span>{localResearchCounts.mindMapNodes} local mind map nodes</span>
+        <span>{localResearchCounts.mindMapEdges} local mind map edges</span>
         <span>{localResearchCounts.synthesisSections} local synthesis sections</span>
         <span>{localResearchCounts.prismaRecords} local PRISMA records</span>
         <span>{localResearchCounts.prismaCriteria} local PRISMA criteria</span>
         <span>
           {cloudResearchCounts
-            ? `${cloudResearchCounts.projects}/${cloudResearchCounts.tasks}/${cloudResearchCounts.logEntries}/${cloudResearchCounts.drafts}/${cloudResearchCounts.submissions}/${cloudResearchCounts.literatureSources}/${cloudResearchCounts.literatureNotes}/${cloudResearchCounts.readingNotes}/${cloudResearchCounts.mindMapNodes}/${cloudResearchCounts.synthesisSections}/${cloudResearchCounts.prismaRecords}/${cloudResearchCounts.prismaCriteria} cloud`
+            ? `${cloudResearchCounts.projects}/${cloudResearchCounts.tasks}/${cloudResearchCounts.logEntries}/${cloudResearchCounts.drafts}/${cloudResearchCounts.submissions}/${cloudResearchCounts.literatureSources}/${cloudResearchCounts.literatureNotes}/${cloudResearchCounts.readingNotes}/${cloudResearchCounts.mindMapNodes}/${cloudResearchCounts.mindMapEdges}/${cloudResearchCounts.synthesisSections}/${cloudResearchCounts.prismaRecords}/${cloudResearchCounts.prismaCriteria} cloud`
             : "Cloud count not checked"}
         </span>
         <span>
@@ -402,6 +409,7 @@ export function ResearchSyncPanel({
         <code>users/{"{uid}"}/researchLiteratureNotes/{"{noteId}"}</code>,{" "}
         <code>users/{"{uid}"}/researchReadingNotes/{"{noteId}"}</code>,{" "}
         <code>users/{"{uid}"}/researchMindMapNodes/{"{nodeId}"}</code>,{" "}
+        <code>users/{"{uid}"}/researchMindMapEdges/{"{edgeId}"}</code>,{" "}
         <code>users/{"{uid}"}/researchSynthesisSections/{"{sectionId}"}</code>,{" "}
         <code>users/{"{uid}"}/researchPrismaRecords/{"{recordId}"}</code>, and{" "}
         <code>users/{"{uid}"}/researchPrismaCriteria/{"{projectId}"}</code>.
@@ -439,6 +447,7 @@ export function ResearchSyncPanel({
         <code>{RESEARCH_LITERATURE_NOTES_STORAGE_KEY}</code>,{" "}
         <code>{RESEARCH_READING_NOTES_STORAGE_KEY}</code>,{" "}
         <code>{RESEARCH_MIND_MAP_NODES_STORAGE_KEY}</code>,{" "}
+        <code>{RESEARCH_MIND_MAP_EDGES_STORAGE_KEY}</code>,{" "}
         <code>{RESEARCH_SYNTHESIS_SECTIONS_STORAGE_KEY}</code>,{" "}
         <code>{RESEARCH_PRISMA_RECORDS_STORAGE_KEY}</code>, and{" "}
         <code>{RESEARCH_PRISMA_CRITERIA_STORAGE_KEY}</code>.

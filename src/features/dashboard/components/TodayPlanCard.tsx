@@ -3,6 +3,7 @@ import type { Task, TaskArea, TaskPriority } from "../../../shared/types/task";
 import { Button } from "../../../shared/ui/Button";
 import { Card } from "../../../shared/ui/Card";
 import { Link } from "react-router-dom";
+import { isShutdownReviewTask } from "../utils/shutdownReviewTask";
 
 type AreaFilter = "All" | TaskArea;
 type PriorityFilter = "All" | TaskPriority;
@@ -14,6 +15,7 @@ type TodayPlanCardProps = {
   onAddTask: () => void;
   onEditTask: (task: Task) => void;
   onOpenDailyPlan: () => void;
+  onOpenShutdownReview?: () => void;
 };
 
 const areaOptions: AreaFilter[] = [
@@ -62,6 +64,7 @@ export function TodayPlanCard({
   onAddTask,
   onEditTask,
   onOpenDailyPlan,
+  onOpenShutdownReview,
 }: TodayPlanCardProps) {
 
   const [areaFilter, setAreaFilter] = useState<AreaFilter>("All");
@@ -178,6 +181,7 @@ export function TodayPlanCard({
  					 {task.dueDate ? ` · due ${task.dueDate}` : ""}
              {task.estimatedMinutes ? ` · ${task.estimatedMinutes} min` : ""}
              {task.lowEnergyFriendly ? " · low-energy friendly" : ""}
+             {isShutdownReviewTask(task) ? " · planning data" : ""}
 				</p>
                 {task.nextAction ? <p>Next: {task.nextAction}</p> : null}
 				</div>
@@ -185,9 +189,23 @@ export function TodayPlanCard({
 
               <div className="task-row-actions">
                 <span className="spoon-cost">{task.spoonCost} 🥄</span>
-                <button className="text-button" onClick={() => onEditTask(task)}>
-                  Edit
-                </button>
+                {isShutdownReviewTask(task) && task.status !== "done" ? (
+                  <button
+                    className="text-button"
+                    type="button"
+                    onClick={onOpenShutdownReview}
+                  >
+                    Review
+                  </button>
+                ) : (
+                  <button
+                    className="text-button"
+                    type="button"
+                    onClick={() => onEditTask(task)}
+                  >
+                    Edit
+                  </button>
+                )}
               </div>
             </div>
           ))}

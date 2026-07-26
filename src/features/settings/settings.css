@@ -111,6 +111,49 @@
   padding-top: 0.85rem;
 }
 
+.settings-calendar-sync-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.settings-calendar-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  border-top: 1px solid rgba(209, 191, 163, 0.75);
+  padding-top: 1rem;
+}
+
+.settings-calendar-action-row .button:disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+
+.settings-google-calendar-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.settings-calendar-apple-note {
+  border: 1px solid rgba(83, 130, 94, 0.28);
+  border-radius: 14px;
+  background: rgba(236, 247, 238, 0.72);
+  padding: 1rem;
+}
+
+.settings-calendar-apple-note h3 {
+  margin: 0 0 0.35rem;
+  color: var(--color-deep-purple);
+  font-size: 1rem;
+}
+
+.settings-calendar-apple-note p {
+  margin: 0;
+  color: var(--color-muted);
+  line-height: 1.5;
+}
+
 .settings-backup-summary,
 .settings-backup-actions,
 .settings-backup-category-list,

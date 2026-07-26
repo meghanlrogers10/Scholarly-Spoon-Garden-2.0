@@ -136,12 +136,29 @@ export type ResearchResultBlock = {
   updatedAt: string;
 };
 
+export type ResearchLogAttachment = {
+  id: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  dataUrl: string;
+  createdAt: string;
+};
+
+export type ResearchSourceFile = ResearchLogAttachment & {
+  lastModified?: number;
+};
+
 export type ResearchLogEntry = {
   id: string;
   projectId: string;
   entryType: ResearchLogEntryType;
   title: string;
   body: string;
+  bodyHtml?: string;
+  branch?: string;
+  sourceFile?: ResearchSourceFile;
+  attachments?: ResearchLogAttachment[];
   doFile?: string;
   folderPath?: string;
   datasetUsed?: string;
@@ -162,6 +179,10 @@ export type ResearchLogEntryInput = {
   entryType: ResearchLogEntryType;
   title: string;
   body: string;
+  bodyHtml?: string;
+  branch?: string;
+  sourceFile?: ResearchSourceFile;
+  attachments?: ResearchLogAttachment[];
   doFile?: string;
   folderPath?: string;
   datasetUsed?: string;
@@ -424,6 +445,19 @@ export type ResearchMindMapNodeInput = {
   y?: number;
   color?: string;
   pinned: boolean;
+};
+
+export type ResearchMindMapEdge = {
+  id: string;
+  projectId: string;
+  sourceNodeId?: string;
+  targetNodeId?: string;
+  sourceId?: string;
+  targetId?: string;
+  label?: string;
+  createdAt?: string;
+  updatedAt: string;
+  [key: string]: unknown;
 };
 
 export type ResearchSynthesisSectionStatus =

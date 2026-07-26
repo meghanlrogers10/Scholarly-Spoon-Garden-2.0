@@ -242,6 +242,8 @@ export type TeachingPrepSession = {
 export type TeachingGradingItem = {
   id: string;
   courseId: string;
+  taId?: string;
+  taName?: string;
   assignment: string;
   assignmentType?:
     | "homework"
@@ -343,6 +345,19 @@ export type TeachingCourseNote = {
   body: string;
   tags: string[];
   noteType: TeachingCourseNoteType;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type TeachingCourseNoteDraft = {
+  id: string;
+  courseId: string;
+  noteId?: string;
+  title: string;
+  body: string;
+  tags: string[];
+  noteType: TeachingCourseNoteType;
+  savedAt?: string;
   createdAt: string;
   updatedAt: string;
 };

@@ -5,6 +5,24 @@ import {
   type AppSettings,
 } from "../types/settings";
 
+function mergeAppSettingsWithDefaults(
+  settings?: Partial<AppSettings> | null,
+): AppSettings {
+  return {
+    ...defaultAppSettings,
+    ...(settings ?? {}),
+    googleCalendarSync: {
+      ...defaultAppSettings.googleCalendarSync,
+      ...(settings?.googleCalendarSync ?? {}),
+      selectedExternalCalendarIds: Array.isArray(
+        settings?.googleCalendarSync?.selectedExternalCalendarIds,
+      )
+        ? settings.googleCalendarSync.selectedExternalCalendarIds
+        : defaultAppSettings.googleCalendarSync.selectedExternalCalendarIds,
+    },
+  };
+}
+
 export function useAppSettings() {
   const [settings, setSettings] = useLocalStorage<AppSettings>(
     APP_SETTINGS_STORAGE_KEY,
@@ -12,12 +30,20 @@ export function useAppSettings() {
   );
 
   function updateSettings(updates: Partial<AppSettings>) {
-    setSettings((currentSettings) => ({
-      ...defaultAppSettings,
-      ...currentSettings,
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    }));
+    setSettings((currentSettings) =>
+      mergeAppSettingsWithDefaults({
+        ...currentSettings,
+        ...updates,
+        googleCalendarSync:
+          updates.googleCalendarSync
+            ? {
+                ...currentSettings.googleCalendarSync,
+                ...updates.googleCalendarSync,
+              }
+            : currentSettings.googleCalendarSync,
+        updatedAt: new Date().toISOString(),
+      }),
+    );
   }
 
   function resetSettings() {
@@ -28,10 +54,7 @@ export function useAppSettings() {
   }
 
   return {
-    settings: {
-      ...defaultAppSettings,
-      ...settings,
-    },
+    settings: mergeAppSettingsWithDefaults(settings),
     updateSettings,
     resetSettings,
   };

@@ -16,6 +16,7 @@ import {
   RESEARCH_LITERATURE_NOTES_STORAGE_KEY,
   RESEARCH_LITERATURE_SOURCES_STORAGE_KEY,
   RESEARCH_LOG_ENTRIES_STORAGE_KEY,
+  RESEARCH_MIND_MAP_EDGES_STORAGE_KEY,
   RESEARCH_MIND_MAP_NODES_STORAGE_KEY,
   RESEARCH_PRISMA_CRITERIA_STORAGE_KEY,
   RESEARCH_PRISMA_RECORDS_STORAGE_KEY,
@@ -39,6 +40,10 @@ import {
   TEACHING_SEMESTERS_STORAGE_KEY,
   TEACHING_TA_ITEMS_STORAGE_KEY,
 } from "../constants/teachingStorage";
+import {
+  readLocalTeachingCourseNoteDrafts,
+  writeLocalTeachingCourseNoteDrafts,
+} from "../../features/teaching/utils/teachingNoteDraftStorage";
 import {
   MANUAL_WORK_LOGS_STORAGE_KEY,
   TIMER_SESSIONS_STORAGE_KEY,
@@ -70,6 +75,7 @@ import {
   normalizeResearchLiteratureNotes,
   normalizeResearchLiteratureSources,
   normalizeResearchLogEntries,
+  normalizeResearchMindMapEdges,
   normalizeResearchMindMapNodes,
   normalizeResearchPrismaCriteriaList,
   normalizeResearchPrismaRecords,
@@ -111,6 +117,7 @@ import {
   normalizeTeachingAnnouncementReminders,
   normalizeTeachingAssistants,
   normalizeTeachingCourseNotes,
+  normalizeTeachingCourseNoteDrafts,
   normalizeTeachingCourses,
   normalizeTeachingCourseTemplates,
   normalizeTeachingGradingItems,
@@ -421,6 +428,9 @@ async function syncTeaching(uid: string) {
     teachingAssistants: normalizeTeachingAssistants(readJson(TEACHING_ASSISTANTS_STORAGE_KEY, [])),
     officeHourVisits: normalizeTeachingOfficeHourVisits(readJson(TEACHING_OFFICE_HOUR_VISITS_STORAGE_KEY, [])),
     courseNotes: normalizeTeachingCourseNotes(readJson(TEACHING_COURSE_NOTES_STORAGE_KEY, [])),
+    courseNoteDrafts: normalizeTeachingCourseNoteDrafts(
+      readLocalTeachingCourseNoteDrafts(),
+    ),
     resources: normalizeTeachingResources(readJson(TEACHING_RESOURCES_STORAGE_KEY, [])),
     announcementReminders: normalizeTeachingAnnouncementReminders(readJson(TEACHING_ANNOUNCEMENT_REMINDERS_STORAGE_KEY, [])),
     courseTemplates: normalizeTeachingCourseTemplates(readJson(TEACHING_COURSE_TEMPLATES_STORAGE_KEY, [])),
@@ -438,12 +448,13 @@ async function syncTeaching(uid: string) {
   writeJson(TEACHING_ASSISTANTS_STORAGE_KEY, mergeResult.teachingAssistants);
   writeJson(TEACHING_OFFICE_HOUR_VISITS_STORAGE_KEY, mergeResult.officeHourVisits);
   writeJson(TEACHING_COURSE_NOTES_STORAGE_KEY, mergeResult.courseNotes);
+  writeLocalTeachingCourseNoteDrafts(mergeResult.courseNoteDrafts);
   writeJson(TEACHING_RESOURCES_STORAGE_KEY, mergeResult.resources);
   writeJson(TEACHING_ANNOUNCEMENT_REMINDERS_STORAGE_KEY, mergeResult.announcementReminders);
   writeJson(TEACHING_COURSE_TEMPLATES_STORAGE_KEY, mergeResult.courseTemplates);
 
   const counts = getTeachingCounts(mergeResult);
-  return `Teaching merged. ${counts.semesters} semesters, ${counts.courses} courses, ${counts.gradingItems} grading items.`;
+  return `Teaching merged. ${counts.semesters} semesters, ${counts.courses} courses, ${counts.gradingItems} grading items, and ${counts.courseNoteDrafts} note drafts.`;
 }
 
 async function syncResearch(uid: string) {
@@ -457,6 +468,7 @@ async function syncResearch(uid: string) {
     literatureNotes: normalizeResearchLiteratureNotes(readJson(RESEARCH_LITERATURE_NOTES_STORAGE_KEY, [])),
     readingNotes: normalizeResearchReadingNotes(readJson(RESEARCH_READING_NOTES_STORAGE_KEY, [])),
     mindMapNodes: normalizeResearchMindMapNodes(readJson(RESEARCH_MIND_MAP_NODES_STORAGE_KEY, [])),
+    mindMapEdges: normalizeResearchMindMapEdges(readJson(RESEARCH_MIND_MAP_EDGES_STORAGE_KEY, [])),
     synthesisSections: normalizeResearchSynthesisSections(readJson(RESEARCH_SYNTHESIS_SECTIONS_STORAGE_KEY, [])),
     prismaRecords: normalizeResearchPrismaRecords(readJson(RESEARCH_PRISMA_RECORDS_STORAGE_KEY, [])),
     prismaCriteria: normalizeResearchPrismaCriteriaList(readJson(RESEARCH_PRISMA_CRITERIA_STORAGE_KEY, [])),
@@ -474,6 +486,7 @@ async function syncResearch(uid: string) {
   writeJson(RESEARCH_LITERATURE_NOTES_STORAGE_KEY, mergeResult.literatureNotes);
   writeJson(RESEARCH_READING_NOTES_STORAGE_KEY, mergeResult.readingNotes);
   writeJson(RESEARCH_MIND_MAP_NODES_STORAGE_KEY, mergeResult.mindMapNodes);
+  writeJson(RESEARCH_MIND_MAP_EDGES_STORAGE_KEY, mergeResult.mindMapEdges);
   writeJson(RESEARCH_SYNTHESIS_SECTIONS_STORAGE_KEY, mergeResult.synthesisSections);
   writeJson(RESEARCH_PRISMA_RECORDS_STORAGE_KEY, mergeResult.prismaRecords);
   writeJson(RESEARCH_PRISMA_CRITERIA_STORAGE_KEY, mergeResult.prismaCriteria);
@@ -484,7 +497,7 @@ async function syncResearch(uid: string) {
       ? ` Skipped ${uploadResult.skippedLargeRecords.length} oversized local records for cloud upload; local copies were preserved.`
       : "";
 
-  return `Research merged. ${counts.projects} projects, ${counts.tasks} tasks, ${counts.literatureSources} sources.${skippedMessage}`;
+  return `Research merged. ${counts.projects} projects, ${counts.tasks} tasks, ${counts.literatureSources} sources, ${counts.literatureNotes} notes, ${counts.mindMapNodes} map nodes, ${counts.mindMapEdges} map edges, ${counts.prismaRecords} PRISMA records.${skippedMessage}`;
 }
 
 async function runArea(area: CloudSaveArea, uid: string) {
@@ -562,7 +575,7 @@ export function requestCloudSaveSync() {
 }
 
 function isCloudSaveEnabled() {
-  return readJson(CLOUD_SAVE_ENABLED_KEY, false);
+  return readJson(CLOUD_SAVE_ENABLED_KEY, true);
 }
 
 export function canAttemptCloudSave(uid: string | null | undefined) {

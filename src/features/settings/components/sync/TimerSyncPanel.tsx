@@ -45,7 +45,7 @@ export function TimerSyncPanel({
   >(MANUAL_WORK_LOGS_STORAGE_KEY, []);
   const [timerSyncEnabled, setTimerSyncEnabled] = useLocalStorage<boolean>(
     TIMER_SYNC_ENABLED_KEY,
-    false,
+    true,
   );
   const [lastTimerSyncAt, setLastTimerSyncAt] = useLocalStorage<string>(
     LAST_TIMER_SYNC_AT_KEY,

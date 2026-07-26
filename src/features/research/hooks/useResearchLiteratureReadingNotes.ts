@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { writeLocalStorageValue } from "../../../shared/utils/localStorageSync";
 import type {
   ResearchLiteratureReadingNote,
   ResearchLiteratureReadingNoteInput,
@@ -28,7 +29,7 @@ function loadReadingNotes() {
 }
 
 function saveReadingNotes(notes: ResearchLiteratureReadingNote[]) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+  writeLocalStorageValue(STORAGE_KEY, notes);
 }
 
 export function useResearchLiteratureReadingNotes() {
@@ -40,11 +41,9 @@ export function useResearchLiteratureReadingNotes() {
       currentNotes: ResearchLiteratureReadingNote[]
     ) => ResearchLiteratureReadingNote[]
   ) {
-    setReadingNotes((currentNotes) => {
-      const updatedNotes = updater(currentNotes);
-      saveReadingNotes(updatedNotes);
-      return updatedNotes;
-    });
+    const updatedNotes = updater(loadReadingNotes());
+    saveReadingNotes(updatedNotes);
+    setReadingNotes(updatedNotes);
   }
 
   function refreshReadingNotes() {

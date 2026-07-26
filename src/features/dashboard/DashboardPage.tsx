@@ -1,9 +1,15 @@
 import "./dashboard.css";
 import "./calendar.css";
-import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { TIMER_SESSIONS_STORAGE_KEY } from "../../shared/constants/timerStorage";
 import { sampleCalendarItems } from "../../shared/data/sampleDashboard";
+import {
+  emptyStoredGoogleCalendarEvents,
+  GOOGLE_CALENDAR_EVENTS_STORAGE_KEY,
+  mapGoogleCalendarEventsToCalendarItems,
+  type StoredGoogleCalendarEvents,
+} from "../../shared/google/googleCalendarStorage";
 import { useAppSettings } from "../../shared/hooks/useAppSettings";
 import { useLocalStorage } from "../../shared/hooks/useLocalStorage";
 import type {
@@ -12,23 +18,16 @@ import type {
 } from "../../shared/types/calendar";
 import type { TimerSession } from "../../shared/types/timer";
 import type { ManualWorkLogEntry } from "../../shared/types/workLog";
-import { Button } from "../../shared/ui/Button";
-import { Card } from "../../shared/ui/Card";
 import { CalendarCard } from "./components/CalendarCard";
 import { CapturedItemsCard } from "./components/CapturedItemsCard";
 import { DailyCheckInModal } from "./components/DailyCheckInModal";
-import { DailyCheckInSummaryCard } from "./components/DailyCheckInSummaryCard";
-import { DailyPlanModal } from "./components/DailyPlanModal";
-import { DashboardActionsCard } from "./components/DashboardActionsCard";
-import { DashboardStatusStrip } from "./components/DashboardStatusStrip";
 import { EnergyTracker } from "./components/EnergyTracker";
 import { EndOfDayReviewModal } from "./components/EndOfDayReviewModal";
 import { LowEnergyTasksCard } from "./components/LowEnergyTasksCard";
 import { ManualWorkLogModal } from "./components/ManualWorkLogModal";
-import { MotivationBanner } from "./components/MotivationBanner";
 import { QuickCaptureCard } from "./components/QuickCaptureCard";
 import { TaskEditorModal } from "./components/TaskEditorModal";
-import { TodayBuilderCard } from "./components/TodayBuilderCard";
+import { TodayControlStrip } from "./components/TodayControlStrip";
 import { TodayPlanCard } from "./components/TodayPlanCard";
 import { UpcomingTasksCard } from "./components/UpcomingTasksCard";
 import { WorkingSessionsCard } from "./components/WorkingSessionsCard";
@@ -38,18 +37,25 @@ import { useDashboardTasks } from "./hooks/useDashboardTasks";
 import { useEndOfDayReview } from "./hooks/useEndOfDayReview";
 import { useManualWorkLogs } from "./hooks/useManualWorkLogs";
 import { usePlannedTaskBlocks } from "./hooks/usePlannedTaskBlocks";
-import { useMindspace } from "../mindspace/hooks/useMindspace";
-import type { MindspaceItem } from "../mindspace/types";
 import { getManualWorkDurationMinutes } from "./utils/actualWorkPlanning";
+import { mapPlannedTaskBlocksToCalendarEvents } from "./utils/plannedTaskBlocks";
 import {
-  createPlannedTaskBlockFromTask,
-  getWorkingBlockRemainingMinutes,
-  mapPlannedTaskBlocksToCalendarEvents,
-} from "./utils/plannedTaskBlocks";
-import { getTaskEstimateMinutes } from "./utils/todayBuilder";
+  findShutdownReviewTask,
+  isShutdownReviewTask,
+} from "./utils/shutdownReviewTask";
 import { mapWorkingBlocksToCalendarEvents } from "./utils/workingBlockCalendar";
+import {
+  getEffectiveDailyCheckIn,
+  getTeachingMinutes,
+  isTeachingWorkingBlock,
+  mapTeachingMeetingsToCalendarEvents,
+  mergeTeachingWorkingBlocks,
+} from "./utils/teachingScheduleBlocks";
+import { useTeaching } from "../teaching/hooks/useTeaching";
 import type {
+  DailyCheckIn,
   PlannedTaskBlock,
+  PlanningMode,
   WorkingBlock,
   WorkingBlockStatus,
 } from "../../shared/types/planning";
@@ -87,32 +93,34 @@ function getTaskCalendarCategory(area: string): CalendarCategory {
   return "Other";
 }
 
-function getMindspaceItemAgeDays(item: MindspaceItem) {
-  const date = new Date(item.lastTouchedAt ?? item.createdAt);
-
-  if (Number.isNaN(date.getTime())) {
-    return 0;
-  }
-
-  return Math.floor((Date.now() - date.getTime()) / 86_400_000);
-}
-
-function isMindspaceRadarItem(item: MindspaceItem) {
-  const isOpen = item.status === "inbox" || item.status === "clarify-later";
-
-  return (
-    isOpen &&
-    ((getMindspaceItemAgeDays(item) >= 7 && !item.nextAction) ||
-      (item.emotionalWeight ?? 0) >= 4 ||
-      !item.tinyStep)
-  );
-}
-
 function getTomorrowDateKey(date: string) {
   const tomorrow = new Date(`${date}T00:00:00`);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
   return tomorrow.toISOString().slice(0, 10);
+}
+
+function getMinutesFromTimeString(time: string) {
+  const [hour = "0", minute = "0"] = time.split(":");
+
+  return Number(hour) * 60 + Number(minute);
+}
+
+function getCurrentMinutes() {
+  const now = new Date();
+
+  return now.getHours() * 60 + now.getMinutes();
+}
+
+function shouldShowHardStopNudge(checkIn: DailyCheckIn | undefined) {
+  if (!checkIn?.hardStopTime) {
+    return false;
+  }
+
+  const hardStopMinutes = getMinutesFromTimeString(checkIn.hardStopTime);
+  const currentMinutes = getCurrentMinutes();
+
+  return currentMinutes >= hardStopMinutes - 15;
 }
 
 function getDerivedWorkingBlockStatus(
@@ -190,13 +198,14 @@ function enrichWorkingBlocksForCalendar(
 
 export function DashboardPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isManualWorkLogOpen, setIsManualWorkLogOpen] = useState(false);
-  const [isDailyPlanOpen, setIsDailyPlanOpen] = useState(false);
   const [isDailyCheckInOpen, setIsDailyCheckInOpen] = useState(false);
   const [isEndOfDayReviewOpen, setIsEndOfDayReviewOpen] = useState(false);
   const [hasAutoOpenedDailyCheckIn, setHasAutoOpenedDailyCheckIn] =
     useState(false);
   const { settings } = useAppSettings();
+  const { courses, meetings } = useTeaching();
   const {
     todayDate,
     todayCheckIn,
@@ -209,12 +218,10 @@ export function DashboardPage() {
   const {
     allTasks,
     todayTasks,
-    completedTasks,
     isTaskModalOpen,
     taskToEdit,
     createTaskFromCapture,
     saveTask,
-    saveDailyPlanTasks,
     toggleTaskDone,
     markTaskDone,
     addActualMinutesToTask,
@@ -222,34 +229,55 @@ export function DashboardPage() {
     addTaskToToday,
     removeTaskFromToday,
     postponeTask,
-    planTaskInWorkingBlock,
+    ensureShutdownReviewTask,
+    completeShutdownReviewTask,
+    reopenShutdownReviewTaskIfReviewIncomplete,
     openAddTaskModal,
     openEditTaskModal,
     closeTaskModal,
   } = useDashboardTasks();
   const { manualWorkLogs, addManualWorkLog, deleteManualWorkLog } =
     useManualWorkLogs();
-  const { items: mindspaceItems } = useMindspace();
   const { getReviewForDate, saveReview } = useEndOfDayReview();
   const {
     plannedBlocks,
     getPlannedBlocksForDate,
-    addPlannedTaskBlock,
     updatePlannedTaskBlock,
     removePlannedTaskBlock,
-    replacePlannedTaskBlocksForDate,
   } = usePlannedTaskBlocks();
   const [timerSessions, setTimerSessions] = useLocalStorage<TimerSession[]>(
     TIMER_SESSIONS_STORAGE_KEY,
     [],
   );
+  const [storedGoogleCalendarEvents] =
+    useLocalStorage<StoredGoogleCalendarEvents>(
+      GOOGLE_CALENDAR_EVENTS_STORAGE_KEY,
+      emptyStoredGoogleCalendarEvents,
+    );
   const todayReview = getReviewForDate(todayDate);
   const todayPlannedBlocks = getPlannedBlocksForDate(todayDate);
-  const clarifyLaterCount = mindspaceItems.filter(
-    (item) => item.status === "inbox" || item.status === "clarify-later",
-  ).length;
-  const avoidanceRadarCount = mindspaceItems.filter(isMindspaceRadarItem).length;
-
+  const effectiveTodayCheckIn = getEffectiveDailyCheckIn(
+    todayCheckIn,
+    todayDate,
+    meetings,
+    courses,
+    settings.defaultPlanningMode ?? "balanced",
+  );
+  const effectiveCheckIns = todayCheckIn
+    ? checkIns.map((checkIn) =>
+        checkIn.date === todayDate ? effectiveTodayCheckIn ?? checkIn : checkIn,
+      )
+    : effectiveTodayCheckIn
+      ? [...checkIns, effectiveTodayCheckIn]
+      : checkIns;
+  const shutdownReviewTask = findShutdownReviewTask(allTasks, todayDate);
+  const isShutdownReviewDone = Boolean(todayReview) || shutdownReviewTask?.status === "done";
+  const [clockMinute, setClockMinute] = useState(() => getCurrentMinutes());
+  const notifiedHardStopDateRef = useRef<string | undefined>(undefined);
+  const showHardStopNudge =
+    Boolean(todayCheckIn) &&
+    !isShutdownReviewDone &&
+    shouldShowHardStopNudge(todayCheckIn);
   useEffect(() => {
     if (
       settings.dailyCheckInEnabled &&
@@ -267,6 +295,41 @@ export function DashboardPage() {
     hasCompletedTodayCheckIn,
     settings.dailyCheckInEnabled,
   ]);
+
+  useEffect(() => {
+    if (todayCheckIn) {
+      reopenShutdownReviewTaskIfReviewIncomplete(todayDate, Boolean(todayReview));
+    }
+  }, [
+    reopenShutdownReviewTaskIfReviewIncomplete,
+    todayCheckIn,
+    todayDate,
+    todayReview,
+  ]);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setClockMinute(getCurrentMinutes());
+    }, 60_000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    if (
+      !showHardStopNudge ||
+      notifiedHardStopDateRef.current === todayDate ||
+      !("Notification" in window) ||
+      Notification.permission !== "granted"
+    ) {
+      return;
+    }
+
+    new Notification("Shutdown Review", {
+      body: "Hard stop is here. Do the 5-minute Shutdown Review so tomorrow has better data.",
+    });
+    notifiedHardStopDateRef.current = todayDate;
+  }, [showHardStopNudge, todayDate, clockMinute]);
 
   useEffect(() => {
     if (new URLSearchParams(location.search).get("shutdownReview") === "1") {
@@ -338,21 +401,32 @@ export function DashboardPage() {
     }));
 
   const allWorkingBlocks = enrichWorkingBlocksForCalendar(
-    checkIns.flatMap((checkIn) => checkIn.workingBlocks),
+    effectiveCheckIns.flatMap((checkIn) => checkIn.workingBlocks),
     plannedBlocks,
     timerSessions,
     manualWorkLogs,
   );
   const workingBlockCalendarItems =
-    mapWorkingBlocksToCalendarEvents(allWorkingBlocks);
+    mapWorkingBlocksToCalendarEvents(
+      allWorkingBlocks.filter((block) => !isTeachingWorkingBlock(block)),
+    );
+  const teachingCalendarItems = mapTeachingMeetingsToCalendarEvents(
+    meetings,
+    courses,
+  );
   const plannedTaskCalendarItems = mapPlannedTaskBlocksToCalendarEvents(
     plannedBlocks,
     allWorkingBlocks,
   );
+  const googleCalendarItems = mapGoogleCalendarEventsToCalendarItems(
+    storedGoogleCalendarEvents.events,
+  );
   const dashboardCalendarItems: CalendarItem[] = [
     ...taskCalendarItems,
     ...workingBlockCalendarItems,
+    ...teachingCalendarItems,
     ...plannedTaskCalendarItems,
+    ...googleCalendarItems,
     ...timerCalendarItems,
     ...manualWorkCalendarItems,
     ...(settings.showSampleCalendarEvents ? sampleCalendarItems : []),
@@ -438,56 +512,60 @@ export function DashboardPage() {
     }
   }
 
-  function handleUseTodayBuilderPlan(taskIds: string[]) {
-    const todayWorkingBlocks = todayCheckIn?.workingBlocks ?? [];
-    const nextPlannedBlocks: PlannedTaskBlock[] = [];
-    const nextPlannedTaskInputs: PlannedTaskBlock[] = [];
+  function handleOpenDailyPlan() {
+    if (todayCheckIn) {
+      ensureShutdownReviewTask(todayDate, Boolean(todayReview));
+    }
 
-    Array.from(new Set(taskIds)).forEach((taskId) => {
-      const task = allTasks.find((item) => item.id === taskId);
-
-      if (!task) {
-        return;
-      }
-
-      const estimateMinutes = getTaskEstimateMinutes(task);
-      const bestFit =
-        todayWorkingBlocks.find(
-          (block) =>
-            getWorkingBlockRemainingMinutes(block, nextPlannedBlocks) >=
-            estimateMinutes,
-        ) ?? todayWorkingBlocks[0];
-
-      if (!bestFit) {
-        addTaskToToday(taskId);
-        return;
-      }
-
-      const plannedBlock = createPlannedTaskBlockFromTask(
-        task,
-        bestFit.id,
-        todayDate,
-      );
-
-      nextPlannedBlocks.push(plannedBlock);
-      nextPlannedTaskInputs.push(plannedBlock);
-      planTaskInWorkingBlock(taskId, bestFit.id);
-    });
-
-    replacePlannedTaskBlocksForDate(todayDate, nextPlannedTaskInputs);
+    navigate("/dashboard/daily-plan");
   }
 
-  function handlePlanTaskInBlock(taskId: string, workingBlockId: string) {
+  function handleSaveTodayCheckIn(
+    input: Parameters<typeof saveTodayCheckIn>[0],
+  ) {
+    saveTodayCheckIn({
+      ...input,
+      workingBlocks: mergeTeachingWorkingBlocks(
+        input.workingBlocks,
+        meetings,
+        courses,
+        todayDate,
+      ),
+    });
+    ensureShutdownReviewTask(todayDate, Boolean(todayReview));
+  }
+
+  function handleToggleTodayTask(taskId: string) {
     const task = allTasks.find((item) => item.id === taskId);
 
-    if (!task) {
+    if (task && isShutdownReviewTask(task) && task.status !== "done") {
+      setIsEndOfDayReviewOpen(true);
       return;
     }
 
-    addPlannedTaskBlock(
-      createPlannedTaskBlockFromTask(task, workingBlockId, todayDate),
-    );
-    planTaskInWorkingBlock(taskId, workingBlockId);
+    toggleTaskDone(taskId);
+  }
+
+  function handlePlanningModeChange(mode: PlanningMode) {
+    if (!effectiveTodayCheckIn) {
+      handleSaveTodayCheckIn({
+        availableSpoons: 3,
+        planningMode: mode,
+        workingBlocks: [],
+      });
+      return;
+    }
+
+    handleSaveTodayCheckIn({
+      availableSpoons: effectiveTodayCheckIn.availableSpoons,
+      planningMode: mode,
+      workingBlocks: effectiveTodayCheckIn.workingBlocks,
+      avoidNotes: effectiveTodayCheckIn.avoidNotes,
+      protectNotes: effectiveTodayCheckIn.protectNotes,
+      preferLowEnergyTasks: effectiveTodayCheckIn.preferLowEnergyTasks,
+      avoidHighEmotionTasks: effectiveTodayCheckIn.avoidHighEmotionTasks,
+      hardStopTime: effectiveTodayCheckIn.hardStopTime,
+    });
   }
 
   function handleRemovePlannedTask(item: CalendarItem) {
@@ -532,39 +610,31 @@ export function DashboardPage() {
         updatePlannedTaskBlock(block.id, { status: "skipped" });
       }
     });
+    completeShutdownReviewTask(todayDate);
     setIsEndOfDayReviewOpen(false);
   }
 
   return (
     <section className="dashboard-page">
       <EnergyTracker />
-      <MotivationBanner />
-      <DashboardStatusStrip />
 
       <main id="main-container">
-        <div id="layout">
-          <div id="taskHints">
-            <TodayPlanCard
-              tasks={todayTasks}
-              onToggleDone={toggleTaskDone}
-              onAddTask={openAddTaskModal}
-              onEditTask={openEditTaskModal}
-              onOpenDailyPlan={() => setIsDailyPlanOpen(true)}
-            />
+        <TodayControlStrip
+          checkIn={effectiveTodayCheckIn}
+          plannedBlocks={todayPlannedBlocks}
+          onModeChange={handlePlanningModeChange}
+          onOpenDailyPlan={handleOpenDailyPlan}
+          onGenerateSuggestions={handleOpenDailyPlan}
+          onLogWork={() => setIsManualWorkLogOpen(true)}
+          onShutdown={() => setIsEndOfDayReviewOpen(true)}
+        />
 
-            <UpcomingTasksCard tasks={allTasks} />
-
-            <LowEnergyTasksCard
-              tasks={allTasks}
-              onAddToToday={addTaskToToday}
-            />
-
-            <WorkingSessionsCard
-              sessions={timerSessions}
-              manualWorkLogs={manualWorkLogs}
-            />
-          </div>
-        </div>
+        {showHardStopNudge ? (
+          <p className="shutdown-review-nudge dashboard-hard-stop-nudge">
+            Hard stop is here. Do the 5-minute Shutdown Review so tomorrow has
+            better data.
+          </p>
+        ) : null}
 
         <CalendarCard
           items={dashboardCalendarItems}
@@ -578,78 +648,40 @@ export function DashboardPage() {
           onEditWorkingBlocks={() => setIsDailyCheckInOpen(true)}
         />
 
-        <div className="dashboard-support-grid dashboard-lower-layout">
-          <div className="dashboard-support-column dashboard-support-column--left">
-            <DailyCheckInSummaryCard
-              checkIn={todayCheckIn}
-              plannedBlocks={todayPlannedBlocks}
-              timerSessions={timerSessions}
-              manualWorkLogs={manualWorkLogs}
-              onEdit={() => setIsDailyCheckInOpen(true)}
-            />
+        <div id="taskHints" className="dashboard-lower-support-grid">
+          <TodayPlanCard
+            tasks={todayTasks}
+            onToggleDone={handleToggleTodayTask}
+            onAddTask={openAddTaskModal}
+            onEditTask={openEditTaskModal}
+            onOpenDailyPlan={handleOpenDailyPlan}
+            onOpenShutdownReview={() => setIsEndOfDayReviewOpen(true)}
+          />
 
-            <CapturedItemsCard
-              items={capturedItems}
-              onDelete={deleteCapture}
-              onClearAll={clearCaptures}
-              onCreateTask={(item) => createTaskFromCapture(item, deleteCapture)}
-            />
-          </div>
+          <UpcomingTasksCard tasks={allTasks} />
 
-          <div className="dashboard-support-column dashboard-support-column--center">
-            <TodayBuilderCard
-              tasks={allTasks}
-              checkIn={todayCheckIn}
-              plannedBlocks={todayPlannedBlocks}
-              defaultPlanningMode={settings.defaultPlanningMode}
-              lowEnergyModeDefault={settings.lowEnergyModeDefault}
-              maxDailySpoonsWarning={settings.maxDailySpoonsWarning}
-              maxDailyTaskWarning={settings.maxDailyTaskWarning}
-              realisticPlanWarnings={settings.realisticPlanWarnings}
-              onUsePlan={handleUseTodayBuilderPlan}
-              onPlanTaskInBlock={handlePlanTaskInBlock}
-            />
+          <LowEnergyTasksCard
+            tasks={allTasks}
+            onAddToToday={addTaskToToday}
+          />
 
-            <DashboardActionsCard
-              todayTaskCount={todayTasks.length}
-              completedTaskCount={completedTasks.length}
-              timerSessionCount={timerSessions.length}
-              manualWorkLogCount={manualWorkLogs.length}
-              clarifyLaterCount={clarifyLaterCount}
-              avoidanceRadarCount={avoidanceRadarCount}
-              onLogWork={() => setIsManualWorkLogOpen(true)}
-            />
-          </div>
+          <WorkingSessionsCard
+            sessions={timerSessions}
+            manualWorkLogs={manualWorkLogs}
+            teachingMinutes={getTeachingMinutes(effectiveTodayCheckIn?.workingBlocks ?? [])}
+            teachingCount={
+              effectiveTodayCheckIn?.workingBlocks.filter(isTeachingWorkingBlock).length ?? 0
+            }
+          />
 
-          <div className="dashboard-support-column dashboard-support-column--right">
-            <QuickCaptureCard onSave={saveCapture} />
+          <QuickCaptureCard onSave={saveCapture} />
 
-            <Card className="end-of-day-review-card">
-              <div className="card-heading-row">
-                <div>
-                  <p className="eyebrow">Shutdown review</p>
-                  <h2>{todayReview ? "Review complete" : "End the day gently"}</h2>
-                </div>
-                <span className="pill">{todayReview ? "saved" : "open"}</span>
-              </div>
-
-              <p className="muted-text">
-                This is a map, not a moral judgment. Capture what rolls forward
-                and what tomorrow should protect.
-              </p>
-
-              {todayReview?.protectedTomorrow ? (
-                <p className="muted-text">
-                  <strong>Tomorrow protects:</strong>{" "}
-                  {todayReview.protectedTomorrow}
-                </p>
-              ) : null}
-
-              <Button type="button" onClick={() => setIsEndOfDayReviewOpen(true)}>
-                {todayReview ? "Edit Shutdown Review" : "Shutdown Review"}
-              </Button>
-            </Card>
-          </div>
+          <CapturedItemsCard
+            items={capturedItems}
+            onDelete={deleteCapture}
+            onClearAll={clearCaptures}
+            onCreateTask={(item) => createTaskFromCapture(item, deleteCapture)}
+          />
         </div>
       </main>
 
@@ -660,29 +692,23 @@ export function DashboardPage() {
         onSaveTask={saveTask}
       />
 
-      <DailyPlanModal
-        isOpen={isDailyPlanOpen}
-        onClose={() => setIsDailyPlanOpen(false)}
-        onSave={saveDailyPlanTasks}
-      />
-
       {isDailyCheckInOpen ? (
         <DailyCheckInModal
-          checkIn={todayCheckIn}
+          checkIn={effectiveTodayCheckIn}
           todayDate={todayDate}
           defaultPlanningMode={settings.defaultPlanningMode}
           defaultStartHour={settings.calendarDayStartHour}
           defaultWorkingBlockMinutes={settings.defaultWorkingBlockMinutes}
           defaultPreferLowEnergyTasks={settings.lowEnergyModeDefault}
           onClose={() => setIsDailyCheckInOpen(false)}
-          onSave={saveTodayCheckIn}
+          onSave={handleSaveTodayCheckIn}
         />
       ) : null}
 
       <ManualWorkLogModal
         isOpen={isManualWorkLogOpen}
         tasks={allTasks}
-        workingBlocks={todayCheckIn?.workingBlocks ?? []}
+        workingBlocks={effectiveTodayCheckIn?.workingBlocks ?? []}
         plannedBlocks={todayPlannedBlocks}
         onClose={() => setIsManualWorkLogOpen(false)}
         onSave={handleSaveManualWorkLog}
@@ -692,7 +718,7 @@ export function DashboardPage() {
         isOpen={isEndOfDayReviewOpen}
         date={todayDate}
         review={todayReview}
-        checkIn={todayCheckIn}
+        checkIn={effectiveTodayCheckIn}
         tasks={allTasks}
         plannedBlocks={plannedBlocks}
         timerSessions={timerSessions}

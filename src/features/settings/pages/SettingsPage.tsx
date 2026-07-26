@@ -1,11 +1,29 @@
 import "../settings.css";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { CloudSyncCard } from "../components/CloudSyncCard";
 import { DataBackupCard } from "../components/DataBackupCard";
+import { mergeGoogleCalendarSyncSettings } from "../utils/googleCalendarSyncSettings";
+import { GOOGLE_CLIENT_ID } from "../../../shared/google/googleCalendarConfig";
+import {
+  emptyStoredGoogleCalendarEvents,
+  GOOGLE_CALENDAR_EVENTS_STORAGE_KEY,
+  type StoredGoogleCalendarEvents,
+} from "../../../shared/google/googleCalendarStorage";
+import {
+  fetchGoogleCalendarEvents,
+  fetchGoogleCalendarList,
+} from "../../../shared/google/googleCalendarReadService";
+import { requestGoogleCalendarAccessToken } from "../../../shared/google/googleIdentity";
 import { useAppSettings } from "../../../shared/hooks/useAppSettings";
+import { useLocalStorage } from "../../../shared/hooks/useLocalStorage";
 import { Button } from "../../../shared/ui/Button";
 import { Card } from "../../../shared/ui/Card";
 import { PageHeader } from "../../../shared/ui/PageHeader";
+import type {
+  GoogleCalendarSource,
+  GoogleCalendarSyncDirection,
+} from "../../../shared/types/googleCalendarSync";
 import type {
   CalendarDensity,
   LayoutDensity,
@@ -31,6 +49,11 @@ const breakOptions = [3, 5, 10, 15, 20];
 const longRunningOptions = [60, 90, 120, 150, 180, 240];
 const maxSpoonOptions = [1, 2, 3, 4, 5, 6, 7, 8];
 const maxTaskOptions = [2, 3, 4, 5, 6, 7, 8, 10];
+
+type SettingsStatus = {
+  tone: "neutral" | "success" | "warning" | "error";
+  message: string;
+};
 
 function ToggleRow({
   label,
@@ -65,6 +88,28 @@ function ToggleRow({
 
 export function SettingsPage() {
   const { settings, updateSettings, resetSettings } = useAppSettings();
+  const [storedGoogleCalendarEvents, setStoredGoogleCalendarEvents] =
+    useLocalStorage<StoredGoogleCalendarEvents>(
+      GOOGLE_CALENDAR_EVENTS_STORAGE_KEY,
+      emptyStoredGoogleCalendarEvents,
+    );
+  const googleCalendarSync = mergeGoogleCalendarSyncSettings(
+    settings.googleCalendarSync,
+  );
+  const accessTokenRef = useRef<string>("");
+  const [googleCalendarSources, setGoogleCalendarSources] = useState<
+    GoogleCalendarSource[]
+  >([]);
+  const [hasGoogleCalendarAccessToken, setHasGoogleCalendarAccessToken] =
+    useState(false);
+  const [googleCalendarStatus, setGoogleCalendarStatus] =
+    useState<SettingsStatus>({
+      tone: GOOGLE_CLIENT_ID ? "neutral" : "warning",
+      message: GOOGLE_CLIENT_ID
+        ? "Google Calendar is ready to connect in read-only mode."
+        : "Google Client ID missing. Add VITE_GOOGLE_CLIENT_ID to enable Google Calendar connection.",
+    });
+  const [isGoogleCalendarBusy, setIsGoogleCalendarBusy] = useState(false);
 
   function handleStartHourChange(value: string) {
     const nextStartHour = Number(value);
@@ -90,6 +135,189 @@ export function SettingsPage() {
       calendarDayStartHour: safeStartHour,
       calendarDayEndHour: nextEndHour,
     });
+  }
+
+  function updateGoogleCalendarSync(
+    updates: Partial<typeof googleCalendarSync>,
+  ) {
+    updateSettings({
+      googleCalendarSync: mergeGoogleCalendarSyncSettings({
+        ...googleCalendarSync,
+        ...updates,
+      }),
+    });
+  }
+
+  function syncSelectedCalendarSources(selectedCalendarIds: string[]) {
+    setGoogleCalendarSources((currentSources) =>
+      currentSources.map((source) => ({
+        ...source,
+        isSelected: selectedCalendarIds.includes(source.id),
+      })),
+    );
+  }
+
+  async function handleConnectGoogleCalendar() {
+    if (!GOOGLE_CLIENT_ID) {
+      setGoogleCalendarStatus({
+        tone: "warning",
+        message:
+          "Google Client ID missing. Add VITE_GOOGLE_CLIENT_ID before connecting Google Calendar.",
+      });
+      return;
+    }
+
+    setIsGoogleCalendarBusy(true);
+    setHasGoogleCalendarAccessToken(false);
+    setGoogleCalendarStatus({
+      tone: "neutral",
+      message: "Opening Google Calendar read-only access...",
+    });
+
+    try {
+      const token = await requestGoogleCalendarAccessToken();
+      accessTokenRef.current = token;
+      setHasGoogleCalendarAccessToken(true);
+
+      const calendars = await fetchGoogleCalendarList(token);
+      const selectedCalendarIds = googleCalendarSync.selectedExternalCalendarIds;
+      const sources = calendars.map((source) => ({
+        ...source,
+        isSelected: selectedCalendarIds.includes(source.id),
+      }));
+
+      setGoogleCalendarSources(sources);
+      updateGoogleCalendarSync({ enabled: true, syncDirection: "read-only" });
+      setGoogleCalendarStatus({
+        tone: "success",
+        message:
+          sources.length > 0
+            ? `Connected read-only. Choose calendars, then import events. Found ${sources.length} calendars.`
+            : "Connected read-only, but no Google calendars were returned.",
+      });
+    } catch (error) {
+      accessTokenRef.current = "";
+      setHasGoogleCalendarAccessToken(false);
+      setGoogleCalendarStatus({
+        tone: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Google Calendar connection did not complete.",
+      });
+    } finally {
+      setIsGoogleCalendarBusy(false);
+    }
+  }
+
+  function handleGoogleCalendarSelection(calendarId: string, selected: boolean) {
+    const selectedCalendarIds = selected
+      ? Array.from(
+          new Set([
+            ...googleCalendarSync.selectedExternalCalendarIds,
+            calendarId,
+          ]),
+        )
+      : googleCalendarSync.selectedExternalCalendarIds.filter(
+          (selectedCalendarId) => selectedCalendarId !== calendarId,
+        );
+
+    updateGoogleCalendarSync({
+      selectedExternalCalendarIds: selectedCalendarIds,
+    });
+    syncSelectedCalendarSources(selectedCalendarIds);
+  }
+
+  async function handleImportGoogleCalendarEvents() {
+    if (!accessTokenRef.current) {
+      setHasGoogleCalendarAccessToken(false);
+      setGoogleCalendarStatus({
+        tone: "warning",
+        message: "Reconnect Google Calendar first. Access tokens are not stored after refresh.",
+      });
+      return;
+    }
+
+    if (googleCalendarSync.selectedExternalCalendarIds.length === 0) {
+      setGoogleCalendarStatus({
+        tone: "warning",
+        message: "Select at least one Google calendar before importing events.",
+      });
+      return;
+    }
+
+    if (!googleCalendarSync.importExternalEvents) {
+      setGoogleCalendarStatus({
+        tone: "warning",
+        message: "Turn on Google event import before importing events.",
+      });
+      return;
+    }
+
+    setIsGoogleCalendarBusy(true);
+    setGoogleCalendarStatus({
+      tone: "neutral",
+      message: "Importing read-only busy time from selected Google calendars...",
+    });
+
+    const windowStart = new Date();
+    windowStart.setDate(windowStart.getDate() - 7);
+    windowStart.setHours(0, 0, 0, 0);
+
+    const windowEnd = new Date();
+    windowEnd.setDate(windowEnd.getDate() + 30);
+    windowEnd.setHours(23, 59, 59, 999);
+
+    try {
+      const eventGroups = await Promise.all(
+        googleCalendarSync.selectedExternalCalendarIds.map((calendarId) =>
+          fetchGoogleCalendarEvents(
+            accessTokenRef.current,
+            calendarId,
+            windowStart.toISOString(),
+            windowEnd.toISOString(),
+            { importAsBusyOnly: googleCalendarSync.importAsBusyOnly },
+          ),
+        ),
+      );
+      const events = eventGroups.flat();
+      const now = new Date().toISOString();
+
+      setStoredGoogleCalendarEvents({
+        fetchedAt: now,
+        windowStart: windowStart.toISOString(),
+        windowEnd: windowEnd.toISOString(),
+        events,
+      });
+      updateGoogleCalendarSync({
+        enabled: true,
+        syncDirection: "read-only",
+        lastSyncAt: now,
+        lastSyncError: "",
+      });
+      setGoogleCalendarStatus({
+        tone: events.length > 0 ? "success" : "warning",
+        message:
+          events.length > 0
+            ? `Imported ${events.length} read-only Google Calendar events as Dashboard busy time.`
+            : "Import finished. No Google Calendar events were found in this window.",
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Google Calendar import did not complete.";
+
+      updateGoogleCalendarSync({
+        lastSyncError: message,
+      });
+      setGoogleCalendarStatus({
+        tone: "error",
+        message,
+      });
+    } finally {
+      setIsGoogleCalendarBusy(false);
+    }
   }
 
   return (
@@ -394,7 +622,7 @@ export function SettingsPage() {
           <div className="settings-toggle-list">
             <ToggleRow
               label="Sound alerts"
-              description="Optional. Off by default so the app does not jumpscare you."
+              description="Play a three-part success chime three times when a focus timer ends."
               checked={settings.timerSoundAlerts}
               onChange={(checked) => updateSettings({ timerSoundAlerts: checked })}
             />
@@ -477,6 +705,231 @@ export function SettingsPage() {
           </div>
         </Card>
       </div>
+
+      <Card className="settings-calendar-sync-card">
+        <div className="card-heading-row">
+          <div>
+            <p className="eyebrow">Google Calendar</p>
+            <h2>Google Calendar Sync</h2>
+            <p className="muted-text">
+              Read-only: SSG can see calendar busy time, but cannot change your
+              Google Calendar. Access tokens stay in memory only, so reconnect
+              after a page refresh. Direct Apple/iCloud sync is not part of this
+              version.
+            </p>
+          </div>
+          <span className="pill">Read-only</span>
+        </div>
+
+        <div className="settings-calendar-action-row">
+          <Button
+            variant="soft"
+            disabled={!GOOGLE_CLIENT_ID || isGoogleCalendarBusy}
+            onClick={handleConnectGoogleCalendar}
+          >
+            Connect Google Calendar
+          </Button>
+          <Button
+            variant="soft"
+            disabled={googleCalendarSources.length === 0 || isGoogleCalendarBusy}
+            onClick={() =>
+              setGoogleCalendarStatus({
+                tone: "neutral",
+                message: "Choose calendars below, then import events.",
+              })
+            }
+          >
+            Select Google calendars
+          </Button>
+          <Button
+            variant="soft"
+            disabled={
+              isGoogleCalendarBusy ||
+              !hasGoogleCalendarAccessToken ||
+              !googleCalendarSync.importExternalEvents ||
+              googleCalendarSync.selectedExternalCalendarIds.length === 0
+            }
+            onClick={handleImportGoogleCalendarEvents}
+          >
+            Import events
+          </Button>
+          <span className="settings-status-pill">
+            {isGoogleCalendarBusy ? "Working" : "No writes"}
+          </span>
+        </div>
+
+        <p className={`settings-backup-status is-${googleCalendarStatus.tone}`}>
+          {googleCalendarStatus.message}
+        </p>
+
+        {storedGoogleCalendarEvents.fetchedAt ? (
+          <div className="settings-backup-summary">
+            <span>
+              {storedGoogleCalendarEvents.events.length} imported Google events
+            </span>
+            <span>
+              Last import{" "}
+              {new Date(
+                storedGoogleCalendarEvents.fetchedAt,
+              ).toLocaleString([], {
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+              })}
+            </span>
+          </div>
+        ) : null}
+
+        {googleCalendarSources.length > 0 ? (
+          <div className="settings-google-calendar-list">
+            {googleCalendarSources.map((source) => (
+              <label key={source.id} className="settings-toggle-row">
+                <span>
+                  <strong>
+                    {source.name}
+                    {source.isPrimary ? <em>Primary</em> : null}
+                  </strong>
+                  <small>
+                    Google Calendar ·{" "}
+                    {source.canWrite ? "writable in Google" : "read access"} ·
+                    SSG imports read-only busy time
+                  </small>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={googleCalendarSync.selectedExternalCalendarIds.includes(
+                    source.id,
+                  )}
+                  onChange={(event) =>
+                    handleGoogleCalendarSelection(
+                      source.id,
+                      event.target.checked,
+                    )
+                  }
+                />
+              </label>
+            ))}
+          </div>
+        ) : null}
+
+        <div className="settings-form-grid">
+          <label>
+            <span>Sync direction</span>
+            <select
+              value={googleCalendarSync.syncDirection}
+              onChange={(event) =>
+                updateGoogleCalendarSync({
+                  syncDirection: event.target
+                    .value as GoogleCalendarSyncDirection,
+                })
+              }
+            >
+              <option value="read-only">Read only</option>
+              <option value="write-only" disabled>
+                Write only later
+              </option>
+              <option value="two-way" disabled>
+                Two-way later
+              </option>
+            </select>
+            <small>
+              V1 only imports Google events as busy-time constraints.
+            </small>
+          </label>
+        </div>
+
+        <div className="settings-toggle-list">
+          <ToggleRow
+            label="Enable Google Calendar sync planning"
+            description="Allow SSG to store read-only Google Calendar preferences and imported busy-time events locally."
+            checked={googleCalendarSync.enabled}
+            onChange={(checked) =>
+              updateGoogleCalendarSync({ enabled: checked })
+            }
+          />
+          <ToggleRow
+            label="Import Google events as busy time"
+            description="Hide titles, descriptions, and locations from SSG when importing external Google events."
+            checked={
+              googleCalendarSync.importExternalEvents &&
+              googleCalendarSync.importAsBusyOnly
+            }
+            onChange={(checked) =>
+              updateGoogleCalendarSync({
+                importExternalEvents: checked,
+                importAsBusyOnly: checked,
+              })
+            }
+          />
+          <ToggleRow
+            label="Export working blocks"
+            description="Opt in later when you want SSG working blocks to appear on Google Calendar."
+            checked={googleCalendarSync.exportWorkingBlocks}
+            onChange={(checked) =>
+              updateGoogleCalendarSync({ exportWorkingBlocks: checked })
+            }
+          />
+          <ToggleRow
+            label="Export planned task blocks"
+            description="Opt in later when planned task blocks are ready to create Google Calendar events."
+            checked={googleCalendarSync.exportPlannedTaskBlocks}
+            onChange={(checked) =>
+              updateGoogleCalendarSync({ exportPlannedTaskBlocks: checked })
+            }
+          />
+          <ToggleRow
+            label="Export research deadlines"
+            description="Deadline-style dates are calendar-friendly, so this starts export-ready."
+            checked={googleCalendarSync.exportResearchDeadlines}
+            onChange={(checked) =>
+              updateGoogleCalendarSync({ exportResearchDeadlines: checked })
+            }
+          />
+          <ToggleRow
+            label="Export teaching deadlines"
+            description="Keep course and teaching deadlines available for future Google Calendar export."
+            checked={googleCalendarSync.exportTeachingDeadlines}
+            onChange={(checked) =>
+              updateGoogleCalendarSync({ exportTeachingDeadlines: checked })
+            }
+          />
+          <ToggleRow
+            label="Export service deadlines"
+            description="Keep committee and service deadlines available for future Google Calendar export."
+            checked={googleCalendarSync.exportServiceDeadlines}
+            onChange={(checked) =>
+              updateGoogleCalendarSync({ exportServiceDeadlines: checked })
+            }
+          />
+          <ToggleRow
+            label="Export timer sessions"
+            description="Off by default because timer history is more personal than calendar planning."
+            checked={googleCalendarSync.exportTimerSessions}
+            onChange={(checked) =>
+              updateGoogleCalendarSync({ exportTimerSessions: checked })
+            }
+          />
+          <ToggleRow
+            label="Export manual work logs"
+            description="Off by default so manually logged work stays private unless you choose otherwise later."
+            checked={googleCalendarSync.exportManualWorkLogs}
+            onChange={(checked) =>
+              updateGoogleCalendarSync({ exportManualWorkLogs: checked })
+            }
+          />
+        </div>
+
+        <div className="settings-calendar-apple-note">
+          <h3>Want this in Apple Calendar too?</h3>
+          <p>
+            Apple Calendar can show these same events by adding your Google
+            account to Apple Calendar on iPhone, iPad, or Mac and turning on
+            Calendars. Direct iCloud or Apple Calendar sync may be considered
+            later, but it is not needed for this path.
+          </p>
+        </div>
+      </Card>
 
       <CloudSyncCard />
 

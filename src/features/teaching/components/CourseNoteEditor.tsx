@@ -21,6 +21,7 @@ type CourseNoteDraft = {
   tags: string;
   body: string;
   savedAt?: string;
+  updatedAt?: string;
 };
 
 export function CourseNoteEditor({
@@ -63,7 +64,11 @@ export function CourseNoteEditor({
   }, [draft.title, draft.noteType, draft.tags, draft.body, isDirty, setDraft]);
 
   function updateDraft(input: Partial<CourseNoteDraft>) {
-    setDraft((currentDraft) => ({ ...currentDraft, ...input }));
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      ...input,
+      updatedAt: new Date().toISOString(),
+    }));
     setIsDirty(true);
   }
 

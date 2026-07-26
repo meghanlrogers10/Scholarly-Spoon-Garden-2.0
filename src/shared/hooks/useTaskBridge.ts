@@ -40,6 +40,7 @@ const taskSources: TaskSource[] = [
   "review-letter",
   "advising-item",
   "admin-other",
+  "daily-planning",
   "mindspace-item",
 ];
 
@@ -141,6 +142,7 @@ function asTaskType(value: unknown) {
     "teaching",
     "research",
     "mindspace",
+    "shutdown-review",
     "other",
   ];
 
