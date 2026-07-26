@@ -120,6 +120,41 @@ function readFileAsAttachment(file: File): Promise<ResearchLogAttachment> {
   });
 }
 
+function RichTextToolbar() {
+  function run(command: string, value?: string) {
+    document.execCommand(command, false, value);
+  }
+
+  return (
+    <div className="research-rich-toolbar" aria-label="Rich text formatting">
+      {[
+        ["bold", "Bold"],
+        ["italic", "Italic"],
+        ["insertUnorderedList", "Bullets"],
+        ["insertOrderedList", "Numbered"],
+      ].map(([command, label]) => (
+        <button
+          key={command}
+          className="research-chip-button"
+          type="button"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => run(command)}
+        >
+          {label}
+        </button>
+      ))}
+      <button
+        className="research-chip-button"
+        type="button"
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={() => run("formatBlock", "blockquote")}
+      >
+        Quote
+      </button>
+    </div>
+  );
+}
+
 export function ResearchLogEntryModal({
   projectId,
   branchName,
@@ -560,6 +595,7 @@ export function ResearchLogEntryModal({
 
               <label>
                 <span>Interpretation</span>
+                <RichTextToolbar />
                 <div
                   className="research-rich-editor"
                   contentEditable
@@ -748,6 +784,7 @@ export function ResearchLogEntryModal({
           ) : (
             <label>
               <span>Entry</span>
+              <RichTextToolbar />
               <div
                 className="research-rich-editor"
                 contentEditable

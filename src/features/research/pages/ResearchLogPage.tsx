@@ -98,6 +98,9 @@ export function ResearchLogPage() {
   );
   const [selectedBranch, setSelectedBranch] = useState("Main");
   const [newBranchName, setNewBranchName] = useState("");
+  const [editingBranchName, setEditingBranchName] = useState<string | null>(null);
+  const [branchRenameValue, setBranchRenameValue] = useState("");
+  const [branchError, setBranchError] = useState("");
 
   const { projects } = useResearchProjects();
   const {
@@ -105,6 +108,7 @@ export function ResearchLogPage() {
     createLogEntry,
     updateLogEntry,
     togglePinnedEntry,
+    renameBranch,
     deleteLogEntry,
     refreshLogEntries,
   } = useResearchLog();
@@ -162,10 +166,46 @@ export function ResearchLogPage() {
       return;
     }
 
+    if (branchNames.includes(cleanedName)) {
+      setSelectedBranch(cleanedName);
+      setNewBranchName("");
+      return;
+    }
+
     setSelectedBranch(cleanedName);
     setNewBranchName("");
     setEditingEntry(null);
     setIsLogModalOpen(true);
+  }
+
+  function startRenamingBranch(branchName: string) {
+    setEditingBranchName(branchName);
+    setBranchRenameValue(branchName);
+    setBranchError("");
+  }
+
+  function saveRenamedBranch() {
+    if (!editingBranchName) {
+      return;
+    }
+
+    const cleanedName = branchRenameValue.trim();
+
+    if (!cleanedName) {
+      setBranchError("Branch name cannot be empty.");
+      return;
+    }
+
+    if (cleanedName !== editingBranchName && branchNames.includes(cleanedName)) {
+      setBranchError("That branch name is already in use.");
+      return;
+    }
+
+    renameBranch(currentProject.id, editingBranchName, cleanedName);
+    setSelectedBranch(cleanedName);
+    setEditingBranchName(null);
+    setBranchRenameValue("");
+    setBranchError("");
   }
 
   function openEditEntryModal(entry: ResearchLogEntry) {
@@ -305,22 +345,54 @@ export function ResearchLogPage() {
             </div>
           </div>
           <div className="research-branch-list">
-            {branchNames.map((branchName) => (
-              <button
-                key={branchName}
-                type="button"
-                className={`research-branch-button${
-                  activeBranch === branchName ? " is-active" : ""
-                }`}
-                onClick={() => setSelectedBranch(branchName)}
-              >
-                <span>{branchName}</span>
-                <small>
-                  {entries.filter((entry) => (entry.branch || "Main") === branchName).length}
-                </small>
-              </button>
-            ))}
+            {branchNames.map((branchName) =>
+              editingBranchName === branchName ? (
+                <div className="research-branch-edit-row" key={branchName}>
+                  <input
+                    value={branchRenameValue}
+                    autoFocus
+                    onChange={(event) => setBranchRenameValue(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") saveRenamedBranch();
+                      if (event.key === "Escape") setEditingBranchName(null);
+                    }}
+                  />
+                  <button
+                    className="research-chip-button"
+                    type="button"
+                    onClick={saveRenamedBranch}
+                  >
+                    Save
+                  </button>
+                </div>
+              ) : (
+                <div className="research-branch-row" key={branchName}>
+                  <button
+                    type="button"
+                    className={`research-branch-button${
+                      activeBranch === branchName ? " is-active" : ""
+                    }`}
+                    onClick={() => setSelectedBranch(branchName)}
+                  >
+                    <span>{branchName}</span>
+                    <small>
+                      {entries.filter((entry) => (entry.branch || "Main") === branchName).length}
+                    </small>
+                  </button>
+                  <button
+                    className="research-branch-rename"
+                    type="button"
+                    title={`Rename ${branchName}`}
+                    aria-label={`Rename ${branchName}`}
+                    onClick={() => startRenamingBranch(branchName)}
+                  >
+                    Rename
+                  </button>
+                </div>
+              ),
+            )}
           </div>
+          {branchError ? <p className="research-form-error">{branchError}</p> : null}
           <div className="research-branch-create">
             <input
               value={newBranchName}

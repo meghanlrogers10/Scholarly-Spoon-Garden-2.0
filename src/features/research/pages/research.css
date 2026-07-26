@@ -1369,6 +1369,41 @@
   text-align: left;
 }
 
+.research-branch-row,
+.research-branch-edit-row {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.research-branch-row .research-branch-button {
+  flex: 1;
+}
+
+.research-branch-rename {
+  border: 0;
+  padding: 0.3rem;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+  font-size: 0.72rem;
+}
+
+.research-branch-rename:hover {
+  color: var(--color-deep-purple);
+  text-decoration: underline;
+}
+
+.research-branch-edit-row input {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid rgba(219, 205, 191, 0.9);
+  border-radius: 10px;
+  padding: 0.55rem;
+  background: white;
+  color: var(--color-text);
+}
+
 .research-branch-button small {
   color: var(--color-muted);
 }
@@ -1500,6 +1535,19 @@
   background: white;
   color: var(--color-text);
   line-height: 1.55;
+}
+
+.research-rich-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.4rem;
+}
+
+.research-rich-editor:empty::before {
+  content: "Write here, or paste a table or image...";
+  color: var(--color-muted);
+  pointer-events: none;
 }
 
 .research-rich-editor:focus {

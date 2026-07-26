@@ -334,6 +334,24 @@ export function useResearchLog() {
     );
   }
 
+  function renameBranch(projectId: string, previousName: string, nextName: string) {
+    const cleanedName = nextName.trim();
+
+    if (!cleanedName || cleanedName === previousName) {
+      return;
+    }
+
+    const now = new Date().toISOString();
+
+    updateEntries((currentEntries) =>
+      currentEntries.map((entry) =>
+        entry.projectId === projectId && (entry.branch || "Main") === previousName
+          ? { ...entry, branch: cleanedName, updatedAt: now }
+          : entry,
+      ),
+    );
+  }
+
   function deleteLogEntry(entryId: string) {
     updateEntries((currentEntries) =>
       currentEntries.filter((entry) => entry.id !== entryId)
@@ -346,6 +364,7 @@ export function useResearchLog() {
     createLogEntry,
     updateLogEntry,
     togglePinnedEntry,
+    renameBranch,
     deleteLogEntry,
     refreshLogEntries,
   };
