@@ -29,15 +29,17 @@ export function LoginPage() {
 
   async function handleEmailSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const submitter = (event.nativeEvent as SubmitEvent).submitter;
+    const authAction =
+      submitter instanceof HTMLButtonElement ? submitter.value : "signin";
+    const nextSubmitting = authAction === "signup" ? "signup" : "signin";
 
-    setSubmitting("signin");
-    await signInWithEmail(email.trim(), password);
-    setSubmitting(null);
-  }
-
-  async function handleSignUp() {
-    setSubmitting("signup");
-    await signUpWithEmail(email.trim(), password);
+    setSubmitting(nextSubmitting);
+    if (nextSubmitting === "signup") {
+      await signUpWithEmail(email.trim(), password);
+    } else {
+      await signInWithEmail(email.trim(), password);
+    }
     setSubmitting(null);
   }
 
@@ -51,13 +53,13 @@ export function LoginPage() {
     <section className="page-stack auth-page">
       <div className="auth-hero">
         <DrSpoonbloomMascot
-          caption="Professor Sprout"
-          displayName="Professor Sprout"
+          caption="Dr. Sprout"
+          displayName="Dr. Sprout"
           size="hero"
         />
         <PageHeader
           className="auth-hero-copy"
-          eyebrow="Professor Sprout says hello"
+          eyebrow="Dr. Sprout says hello"
           title="Scholarly Spoon Garden"
           description="A reality-based planning system for academic brains with limited spoons."
         />
@@ -78,8 +80,8 @@ export function LoginPage() {
         <div className="auth-status-box">
           <Cloud size={20} aria-hidden="true" />
           <p>
-            Cloud Save stays off until you enable it in Settings. Signing in only
-            chooses the account your workspace belongs to.
+            Cloud Save turns on automatically when you sign in. Local saves still
+            keep the app usable during temporary network trouble.
           </p>
         </div>
 
@@ -124,15 +126,15 @@ export function LoginPage() {
           </label>
 
           <div className="auth-actions">
-            <Button type="submit" disabled={authDisabled}>
+            <Button type="submit" value="signin" disabled={authDisabled}>
               <LogIn size={16} aria-hidden="true" />{" "}
               {submitting === "signin" ? "Signing in..." : "Sign in"}
             </Button>
             <Button
-              type="button"
+              type="submit"
+              value="signup"
               variant="soft"
-              onClick={handleSignUp}
-              disabled={authDisabled || !email.trim() || password.length < 6}
+              disabled={authDisabled}
             >
               <UserPlus size={16} aria-hidden="true" />{" "}
               {submitting === "signup" ? "Creating..." : "Create account"}
