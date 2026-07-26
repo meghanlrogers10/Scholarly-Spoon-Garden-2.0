@@ -15,6 +15,8 @@ export type LayoutDensity = "compact" | "comfortable" | "spacious";
 
 export type AppSettings = {
   updatedAt?: string;
+  preferredName?: string;
+  preferredNameUpdatedAt?: string;
   calendarDayStartHour: number;
   calendarDayEndHour: number;
   defaultWorkingBlockMinutes: number;

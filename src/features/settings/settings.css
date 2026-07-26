@@ -1,6 +1,28 @@
 .settings-page {
-  max-width: 1180px;
+  max-width: 1040px;
   margin: 0 auto;
+}
+
+.settings-primary-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.9fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.settings-section {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.settings-section-heading h2 {
+  margin: 0;
+  color: var(--color-deep-purple);
+}
+
+.settings-profile-card,
+.settings-cloud-card {
+  min-height: 100%;
 }
 
 .settings-back-row {
@@ -38,6 +60,7 @@
   line-height: 1.35;
 }
 
+.settings-form-grid input,
 .settings-form-grid select {
   width: 100%;
   border: 1px solid var(--color-border);
@@ -45,11 +68,37 @@
   background: #ffffff;
   color: var(--color-text);
   padding: 0.65rem 0.75rem;
+  font: inherit;
 }
 
 .settings-form-grid select:disabled {
   cursor: not-allowed;
   opacity: 0.72;
+}
+
+.settings-full-width {
+  grid-column: 1 / -1;
+}
+
+.settings-profile-account {
+  display: grid;
+  gap: 0.25rem;
+  align-content: center;
+  border: 1px solid rgba(209, 191, 163, 0.75);
+  border-radius: 8px;
+  background: rgba(255, 250, 245, 0.72);
+  padding: 0.7rem 0.85rem;
+}
+
+.settings-profile-account span {
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.settings-profile-account strong {
+  color: var(--color-text);
+  overflow-wrap: anywhere;
 }
 
 .settings-status-pill,
@@ -111,6 +160,51 @@
   padding-top: 0.85rem;
 }
 
+.settings-actions--inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.settings-actions--inline .button {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.settings-cloud-status {
+  display: grid;
+  gap: 0.25rem;
+  margin-top: 1rem;
+  border: 1px solid rgba(209, 191, 163, 0.75);
+  border-radius: 8px;
+  background: rgba(255, 250, 245, 0.74);
+  padding: 0.9rem;
+  color: var(--color-muted);
+}
+
+.settings-cloud-status strong {
+  color: var(--color-deep-purple);
+  font-size: 1rem;
+}
+
+.settings-cloud-status small {
+  color: var(--color-muted);
+  font-weight: 700;
+}
+
+.settings-cloud-status.is-success {
+  border-color: rgba(83, 130, 94, 0.35);
+  background: rgba(236, 247, 238, 0.85);
+}
+
+.settings-cloud-status.is-warning,
+.settings-cloud-status.is-error {
+  border-color: rgba(194, 144, 55, 0.38);
+  background: rgba(255, 248, 230, 0.9);
+}
+
 .settings-calendar-sync-card {
   display: grid;
   gap: 1rem;
@@ -133,6 +227,37 @@
 .settings-google-calendar-list {
   display: grid;
   gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.settings-details,
+.settings-advanced {
+  border: 1px solid rgba(209, 191, 163, 0.75);
+  border-radius: 8px;
+  background: rgba(255, 250, 245, 0.58);
+  padding: 0.8rem 0.95rem;
+}
+
+.settings-details {
+  margin-top: 1rem;
+}
+
+.settings-details summary,
+.settings-advanced summary {
+  cursor: pointer;
+  color: var(--color-deep-purple);
+  font-weight: 800;
+}
+
+.settings-details[open],
+.settings-advanced[open] {
+  background: rgba(255, 250, 245, 0.82);
+}
+
+.settings-advanced-content {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
 }
 
 .settings-calendar-apple-note {
@@ -319,6 +444,7 @@
 }
 
 @media (max-width: 900px) {
+  .settings-primary-grid,
   .settings-section-grid {
     grid-template-columns: 1fr;
   }

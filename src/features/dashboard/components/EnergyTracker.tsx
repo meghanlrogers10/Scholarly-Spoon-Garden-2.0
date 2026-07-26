@@ -1,5 +1,6 @@
 import { useLocalStorage } from "../../../shared/hooks/useLocalStorage";
 import { Card } from "../../../shared/ui/Card";
+import { AVAILABLE_SPOONS_STORAGE_KEY } from "../utils/planningStorage";
 
 const MAX_SPOONS = 5;
 
@@ -21,7 +22,7 @@ function getEnergyLabel(spoons: number) {
 
 export function EnergyTracker() {
   const [availableSpoons, setAvailableSpoons] = useLocalStorage<number>(
-    "ssg2.availableSpoons",
+    AVAILABLE_SPOONS_STORAGE_KEY,
     3,
   );
 

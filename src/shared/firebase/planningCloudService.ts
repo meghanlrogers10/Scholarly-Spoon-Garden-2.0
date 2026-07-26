@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   serverTimestamp,
   setDoc,
@@ -9,10 +10,14 @@ import {
 import {
   flattenWorkingBlocks,
   mergePlanningForSync,
+  normalizeCapturedItems,
   normalizeDailyCheckIns,
+  normalizeEnergyCheckIn,
   normalizeEndOfDayReviews,
   normalizePlannedTaskBlocks,
   normalizeWorkingBlocks,
+  type CapturedItem,
+  type EnergyCheckInSnapshot,
   type PlanningCloudSnapshot,
   type PlanningStorageSnapshot,
 } from "../../features/dashboard/utils/planningStorage";
@@ -26,16 +31,21 @@ import { db } from "./firebaseClient";
 import {
   getUserDailyCheckInDocumentSegments,
   getUserDailyCheckInsCollectionSegments,
+  getUserEnergyCheckInDocumentSegments,
   getUserEndOfDayReviewDocumentSegments,
   getUserEndOfDayReviewsCollectionSegments,
   getUserPlannedTaskBlockDocumentSegments,
   getUserPlannedTaskBlocksCollectionSegments,
+  getUserQuickCaptureDocumentSegments,
+  getUserQuickCapturesCollectionSegments,
   getUserWorkingBlockDocumentSegments,
   getUserWorkingBlocksCollectionSegments,
 } from "./firestorePaths";
 
 export type PlanningCloudCounts = {
   dailyCheckIns: number;
+  energyCheckIn: number;
+  quickCaptures: number;
   workingBlocks: number;
   plannedTaskBlocks: number;
   endOfDayReviews: number;
@@ -95,6 +105,17 @@ export async function listUserDailyCheckIns(uid: string): Promise<DailyCheckIn[]
   );
 }
 
+export async function readUserEnergyCheckIn(
+  uid: string,
+): Promise<EnergyCheckInSnapshot | null> {
+  const firestore = requireDb();
+  const snapshot = await getDoc(
+    doc(firestore, ...getUserEnergyCheckInDocumentSegments(uid)),
+  );
+
+  return snapshot.exists() ? normalizeEnergyCheckIn(snapshot.data()) : null;
+}
+
 export async function listUserWorkingBlocks(uid: string): Promise<WorkingBlock[]> {
   return normalizeWorkingBlocks(
     await listCollectionRecords(getUserWorkingBlocksCollectionSegments(uid)),
@@ -117,21 +138,39 @@ export async function listUserEndOfDayReviews(
   );
 }
 
+export async function listUserQuickCaptures(uid: string): Promise<CapturedItem[]> {
+  return normalizeCapturedItems(
+    await listCollectionRecords(getUserQuickCapturesCollectionSegments(uid)),
+  );
+}
+
 export async function listUserPlanningData(
   uid: string,
 ): Promise<PlanningCloudSnapshot> {
-  const [checkIns, workingBlocks, plannedBlocks, reviews] = await Promise.all([
-    listUserDailyCheckIns(uid),
-    listUserWorkingBlocks(uid),
-    listUserPlannedTaskBlocks(uid),
-    listUserEndOfDayReviews(uid),
-  ]);
-
-  return {
+  const [
+    energyCheckIn,
     checkIns,
     workingBlocks,
     plannedBlocks,
     reviews,
+    quickCaptures,
+  ] =
+    await Promise.all([
+      readUserEnergyCheckIn(uid),
+      listUserDailyCheckIns(uid),
+      listUserWorkingBlocks(uid),
+      listUserPlannedTaskBlocks(uid),
+      listUserEndOfDayReviews(uid),
+      listUserQuickCaptures(uid),
+    ]);
+
+  return {
+    energyCheckIn,
+    checkIns,
+    workingBlocks,
+    plannedBlocks,
+    reviews,
+    quickCaptures,
   };
 }
 
@@ -142,6 +181,8 @@ export async function countUserPlanningData(
 
   return {
     dailyCheckIns: cloudData.checkIns.length,
+    energyCheckIn: cloudData.energyCheckIn ? 1 : 0,
+    quickCaptures: cloudData.quickCaptures.length,
     workingBlocks: cloudData.workingBlocks.length,
     plannedTaskBlocks: cloudData.plannedBlocks.length,
     endOfDayReviews: cloudData.reviews.length,
@@ -154,12 +195,22 @@ export async function batchUploadUserPlanningData(
 ) {
   const firestore = requireDb();
   const normalizedSnapshot: PlanningStorageSnapshot = {
+    energyCheckIn: normalizeEnergyCheckIn(snapshot.energyCheckIn),
     checkIns: normalizeDailyCheckIns(snapshot.checkIns),
     plannedBlocks: normalizePlannedTaskBlocks(snapshot.plannedBlocks),
     reviews: normalizeEndOfDayReviews(snapshot.reviews),
+    quickCaptures: normalizeCapturedItems(snapshot.quickCaptures),
   };
   const workingBlocks = flattenWorkingBlocks(normalizedSnapshot.checkIns);
   const batch = writeBatch(firestore);
+
+  if (normalizedSnapshot.energyCheckIn) {
+    batch.set(
+      doc(firestore, ...getUserEnergyCheckInDocumentSegments(uid)),
+      toFirestoreRecord(normalizedSnapshot.energyCheckIn),
+      { merge: true },
+    );
+  }
 
   normalizedSnapshot.checkIns.forEach((checkIn) => {
     batch.set(
@@ -202,10 +253,20 @@ export async function batchUploadUserPlanningData(
     );
   });
 
+  normalizedSnapshot.quickCaptures.forEach((capture) => {
+    batch.set(
+      doc(firestore, ...getUserQuickCaptureDocumentSegments(uid, capture.id)),
+      toFirestoreRecord(capture),
+      { merge: true },
+    );
+  });
+
   await batch.commit();
 
   return {
     dailyCheckIns: normalizedSnapshot.checkIns.length,
+    energyCheckIn: normalizedSnapshot.energyCheckIn ? 1 : 0,
+    quickCaptures: normalizedSnapshot.quickCaptures.length,
     workingBlocks: workingBlocks.length,
     plannedTaskBlocks: normalizedSnapshot.plannedBlocks.length,
     endOfDayReviews: normalizedSnapshot.reviews.length,

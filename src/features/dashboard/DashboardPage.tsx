@@ -3,7 +3,6 @@ import "./calendar.css";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { TIMER_SESSIONS_STORAGE_KEY } from "../../shared/constants/timerStorage";
-import { sampleCalendarItems } from "../../shared/data/sampleDashboard";
 import {
   emptyStoredGoogleCalendarEvents,
   GOOGLE_CALENDAR_EVENTS_STORAGE_KEY,
@@ -429,7 +428,6 @@ export function DashboardPage() {
     ...googleCalendarItems,
     ...timerCalendarItems,
     ...manualWorkCalendarItems,
-    ...(settings.showSampleCalendarEvents ? sampleCalendarItems : []),
   ];
 
   function handleDeleteCalendarItem(item: CalendarItem) {

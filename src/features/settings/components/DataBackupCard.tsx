@@ -3,7 +3,6 @@ import {
   APP_STORAGE_KEYS,
   APP_STORAGE_PREFIXES,
   collectAppBackup,
-  createBackupFilename,
   downloadBackup,
   parseBackupText,
   previewBackupRestore,
@@ -146,12 +145,6 @@ export function DataBackupCard() {
       return;
     }
 
-    const safetyBackup = collectAppBackup();
-    downloadBackup(
-      safetyBackup,
-      createBackupFilename("scholarly-spoon-garden-pre-restore-backup")
-    );
-
     const result = restoreBackupEntries(preview);
     setLastRestore(result);
     setStatus({
@@ -168,12 +161,6 @@ export function DataBackupCard() {
       return;
     }
 
-    const safetyBackup = collectAppBackup();
-    downloadBackup(
-      safetyBackup,
-      createBackupFilename("scholarly-spoon-garden-pre-sample-cleanup-backup")
-    );
-
     const result = clearLocalResearchTeachingServiceData();
 
     setCleanupConfirmed(false);
@@ -182,7 +169,7 @@ export function DataBackupCard() {
     setLastRestore(null);
     setStatus({
       tone: "success",
-      message: `Cleared ${result.recordCount} Research, Teaching, and Service local records across ${result.keyCount} keys. Tasks, Planning, Timer/manual logs, Mindspace, Settings, account state, sync metadata, and backups were not cleared.`,
+      message: `Cleared ${result.recordCount} confirmed demo/seed Research, Teaching, Service, and Mindspace records across ${result.keyCount} keys. Real user records were left in place.`,
     });
   }
 
@@ -190,12 +177,6 @@ export function DataBackupCard() {
     if (!dashboardCleanupConfirmed) {
       return;
     }
-
-    const safetyBackup = collectAppBackup();
-    downloadBackup(
-      safetyBackup,
-      createBackupFilename("scholarly-spoon-garden-pre-dashboard-cleanup-backup")
-    );
 
     const result = clearLocalDashboardTasksData();
 
@@ -205,7 +186,7 @@ export function DataBackupCard() {
     setLastRestore(null);
     setStatus({
       tone: "success",
-      message: `Cleared ${result.recordCount} Dashboard, Tasks, and Timer local records/settings across ${result.keyCount} entries. Research, Teaching, Service, Mindspace, Firebase account state, sync metadata, and backups were not cleared.`,
+      message: `Cleared ${result.recordCount} confirmed demo/seed Dashboard, Tasks, and Timer records/settings across ${result.keyCount} entries. Real user records were left in place.`,
     });
   }
 
@@ -216,8 +197,9 @@ export function DataBackupCard() {
           <p className="eyebrow">Data / Backup</p>
           <h2>Local backup and restore</h2>
           <p className="muted-text">
-            Export a local JSON backup before big changes or migration work.
-            Cloud sync is not active yet, so this is your calm little safety net.
+            Export or restore local JSON backups. Cloud save runs automatically
+            for signed-in users, and this tool is here for manual safety copies
+            or recovery.
           </p>
         </div>
         <span className="pill">Backup v1</span>
@@ -231,7 +213,7 @@ export function DataBackupCard() {
 
       <div className="settings-backup-actions">
         <Button type="button" onClick={handleExportBackup}>
-          Export backup
+          Download backup
         </Button>
         <Button type="button" variant="soft" onClick={handleChooseImportFile}>
           Import backup
@@ -287,8 +269,7 @@ export function DataBackupCard() {
               onChange={(event) => setRestoreConfirmed(event.target.checked)}
             />
             <span>
-              I understand this will overwrite matching local SSG data keys. Make
-              a safety backup first.
+              I understand this will overwrite matching local SSG data keys.
             </span>
           </label>
 
@@ -324,12 +305,11 @@ export function DataBackupCard() {
       <section className="settings-danger-zone" aria-live="polite">
         <div>
           <p className="eyebrow">Danger zone</p>
-          <h3>Clear local Research/Teaching/Service sample data</h3>
+          <h3>Clear confirmed Research/Teaching/Service/Mindspace demo data</h3>
           <p className="muted-text">
-            This clears local Research, Teaching, and Service records from this
-            browser only. It does not clear Tasks, Dashboard planning,
-            Timer/manual logs, Mindspace, Settings, Firebase account state,
-            sync metadata, or backup files.
+            This removes only records with explicit sample/demo/test metadata or
+            exact old seed IDs from this browser. It does not remove generic
+            records that might be real work.
           </p>
         </div>
 
@@ -337,6 +317,7 @@ export function DataBackupCard() {
           <span>{cleanupSummary.countsByCategory.research} Research records</span>
           <span>{cleanupSummary.countsByCategory.teaching} Teaching records</span>
           <span>{cleanupSummary.countsByCategory.service} Service records</span>
+          <span>{cleanupSummary.countsByCategory.mindspace} Mindspace records</span>
           <span>{cleanupSummary.keyCount} matching local keys</span>
         </div>
 
@@ -347,8 +328,8 @@ export function DataBackupCard() {
             onChange={(event) => setCleanupConfirmed(event.target.checked)}
           />
           <span>
-            I have exported or reviewed a backup and understand this will clear
-            local Research, Teaching, and Service records from this browser.
+            I understand this will clear only confirmed demo/seed records from
+            local Research, Teaching, Service, and Mindspace data.
           </span>
         </label>
 
@@ -361,7 +342,7 @@ export function DataBackupCard() {
             disabled={!cleanupConfirmed || cleanupSummary.keyCount === 0}
             onClick={handleClearSampleData}
           >
-            Clear local Research/Teaching/Service data
+            Clear confirmed demo data
           </Button>
         </div>
       </section>
@@ -369,12 +350,11 @@ export function DataBackupCard() {
       <section className="settings-danger-zone" aria-live="polite">
         <div>
           <p className="eyebrow">Danger zone</p>
-          <h3>Clear local Dashboard/Tasks sample data</h3>
+          <h3>Clear confirmed Dashboard/Tasks demo data</h3>
           <p className="muted-text">
-            This clears local Tasks, Dashboard planning, Timer/manual logs,
-            quick captures, and related Dashboard calendar sample settings from
-            this browser only. It does not clear Research, Teaching, Service,
-            Mindspace, Firebase account state, sync metadata, or backup files.
+            This removes only confirmed demo/seed tasks, dashboard records,
+            timer records, and the old sample-calendar setting. It does not
+            remove generic records that might be real work.
           </p>
         </div>
 
@@ -400,9 +380,8 @@ export function DataBackupCard() {
             }
           />
           <span>
-            I have exported or reviewed a backup and understand this will clear
-            local Dashboard, Tasks, Timer, manual log, and quick capture records
-            from this browser.
+            I understand this will clear only confirmed demo/seed Dashboard,
+            Task, Timer, manual log, and quick capture records from this browser.
           </span>
         </label>
 
@@ -417,7 +396,7 @@ export function DataBackupCard() {
             }
             onClick={handleClearDashboardTasksData}
           >
-            Clear local Dashboard/Tasks data
+            Clear confirmed dashboard demo data
           </Button>
         </div>
       </section>

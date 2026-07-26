@@ -1,14 +1,13 @@
 import { useLocalStorage } from "../../../shared/hooks/useLocalStorage";
-
-export type CapturedItem = {
-  id: string;
-  text: string;
-  createdAt: string;
-};
+import {
+  QUICK_CAPTURES_STORAGE_KEY,
+  type CapturedItem,
+} from "../utils/planningStorage";
+export type { CapturedItem } from "../utils/planningStorage";
 
 export function useDashboardCaptures() {
   const [capturedItems, setCapturedItems] = useLocalStorage<CapturedItem[]>(
-    "ssg2.quickCaptures",
+    QUICK_CAPTURES_STORAGE_KEY,
     [],
   );
 

@@ -11,13 +11,29 @@ import type { TaskArea } from "../../../shared/types/task";
 import { isValidPlannedTaskBlockStatus } from "./plannedTaskBlocks";
 
 export const DAILY_CHECK_IN_STORAGE_KEY = "ssg2.dailyCheckIns";
+export const AVAILABLE_SPOONS_STORAGE_KEY = "ssg2.availableSpoons";
 export const PLANNED_TASK_BLOCK_STORAGE_KEY = "ssg2.plannedTaskBlocks";
 export const END_OF_DAY_REVIEW_STORAGE_KEY = "ssg2.endOfDayReviews";
+export const QUICK_CAPTURES_STORAGE_KEY = "ssg2.quickCaptures";
+
+export type CapturedItem = {
+  id: string;
+  text: string;
+  createdAt: string;
+};
+
+export type EnergyCheckInSnapshot = {
+  id: "current";
+  availableSpoons: DailyCheckIn["availableSpoons"];
+  updatedAt: string;
+};
 
 export type PlanningStorageSnapshot = {
+  energyCheckIn: EnergyCheckInSnapshot | null;
   checkIns: DailyCheckIn[];
   plannedBlocks: PlannedTaskBlock[];
   reviews: EndOfDayReview[];
+  quickCaptures: CapturedItem[];
 };
 
 export type PlanningCloudSnapshot = PlanningStorageSnapshot & {
@@ -223,6 +239,28 @@ export function normalizeDailyCheckIns(value: unknown): DailyCheckIn[] {
     .filter((checkIn): checkIn is DailyCheckIn => Boolean(checkIn));
 }
 
+export function normalizeEnergyCheckIn(
+  value: unknown,
+): EnergyCheckInSnapshot | null {
+  if (typeof value === "number") {
+    return {
+      id: "current",
+      availableSpoons: asSpoons(value),
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  return {
+    id: "current",
+    availableSpoons: asSpoons(value.availableSpoons),
+    updatedAt: asString(value.updatedAt) ?? new Date().toISOString(),
+  };
+}
+
 export function normalizePlannedTaskBlock(
   value: unknown,
 ): PlannedTaskBlock | null {
@@ -313,15 +351,46 @@ export function normalizeEndOfDayReviews(value: unknown): EndOfDayReview[] {
     .filter((review): review is EndOfDayReview => Boolean(review));
 }
 
+export function normalizeCapturedItem(value: unknown): CapturedItem | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const text = asString(value.text);
+  const createdAt = asString(value.createdAt);
+
+  if (!text) {
+    return null;
+  }
+
+  return {
+    id: asString(value.id) ?? crypto.randomUUID(),
+    text,
+    createdAt: createdAt ?? new Date().toISOString(),
+  };
+}
+
+export function normalizeCapturedItems(value: unknown): CapturedItem[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map(normalizeCapturedItem)
+    .filter((item): item is CapturedItem => Boolean(item));
+}
+
 export function getPlanningCounts(snapshot: PlanningStorageSnapshot) {
   return {
     checkIns: snapshot.checkIns.length,
+    energyCheckIn: snapshot.energyCheckIn ? 1 : 0,
     workingBlocks: snapshot.checkIns.reduce(
       (count, checkIn) => count + checkIn.workingBlocks.length,
       0,
     ),
     plannedBlocks: snapshot.plannedBlocks.length,
     reviews: snapshot.reviews.length,
+    quickCaptures: snapshot.quickCaptures.length,
   };
 }
 
@@ -473,6 +542,38 @@ function mergeCheckIns(
   };
 }
 
+function mergeEnergyCheckIn(
+  localValue: EnergyCheckInSnapshot | null,
+  cloudValue: EnergyCheckInSnapshot | null,
+) {
+  if (!localValue) {
+    return {
+      energyCheckIn: cloudValue,
+      addedCount: cloudValue ? 1 : 0,
+      updatedCount: 0,
+      dedupedCount: 0,
+    };
+  }
+
+  if (!cloudValue) {
+    return {
+      energyCheckIn: localValue,
+      addedCount: 0,
+      updatedCount: 0,
+      dedupedCount: 0,
+    };
+  }
+
+  const energyCheckIn = newerByTimestamp(localValue, cloudValue);
+
+  return {
+    energyCheckIn,
+    addedCount: 0,
+    updatedCount: countUpdate(localValue, energyCheckIn),
+    dedupedCount: 1,
+  };
+}
+
 function getPlannedBlockKey(block: PlannedTaskBlock) {
   return `${block.date}:${block.workingBlockId}:${block.taskId}`;
 }
@@ -598,10 +699,52 @@ function mergeReviews(
   };
 }
 
+function mergeCapturedItems(
+  localItems: CapturedItem[],
+  cloudItems: CapturedItem[],
+) {
+  const itemsById = new Map<string, CapturedItem>();
+  let addedCount = 0;
+  let dedupedCount = 0;
+
+  localItems.forEach((item) => {
+    itemsById.set(item.id, item);
+  });
+
+  cloudItems.forEach((cloudItem) => {
+    const localItem = itemsById.get(cloudItem.id);
+
+    if (!localItem) {
+      itemsById.set(cloudItem.id, cloudItem);
+      addedCount += 1;
+      return;
+    }
+
+    itemsById.set(localItem.id, {
+      ...cloudItem,
+      ...localItem,
+      id: localItem.id,
+    });
+    dedupedCount += 1;
+  });
+
+  return {
+    quickCaptures: Array.from(itemsById.values()).sort(
+      (a, b) => timestamp(b) - timestamp(a),
+    ),
+    addedCount,
+    dedupedCount,
+  };
+}
+
 export function mergePlanningForSync(
   localSnapshot: PlanningStorageSnapshot,
   cloudSnapshot: PlanningCloudSnapshot,
 ): PlanningMergeResult {
+  const energyCheckIn = mergeEnergyCheckIn(
+    localSnapshot.energyCheckIn,
+    cloudSnapshot.energyCheckIn,
+  );
   const checkIns = mergeCheckIns(
     localSnapshot.checkIns,
     cloudSnapshot.checkIns,
@@ -612,16 +755,33 @@ export function mergePlanningForSync(
     cloudSnapshot.plannedBlocks,
   );
   const reviews = mergeReviews(localSnapshot.reviews, cloudSnapshot.reviews);
+  const quickCaptures = mergeCapturedItems(
+    localSnapshot.quickCaptures,
+    cloudSnapshot.quickCaptures,
+  );
 
   return {
+    energyCheckIn: energyCheckIn.energyCheckIn,
     checkIns: checkIns.checkIns,
     plannedBlocks: plannedBlocks.plannedBlocks,
     reviews: reviews.reviews,
+    quickCaptures: quickCaptures.quickCaptures,
     addedCount:
-      checkIns.addedCount + plannedBlocks.addedCount + reviews.addedCount,
+      checkIns.addedCount +
+      energyCheckIn.addedCount +
+      plannedBlocks.addedCount +
+      reviews.addedCount +
+      quickCaptures.addedCount,
     updatedCount:
-      checkIns.updatedCount + plannedBlocks.updatedCount + reviews.updatedCount,
+      checkIns.updatedCount +
+      energyCheckIn.updatedCount +
+      plannedBlocks.updatedCount +
+      reviews.updatedCount,
     dedupedCount:
-      checkIns.dedupedCount + plannedBlocks.dedupedCount + reviews.dedupedCount,
+      checkIns.dedupedCount +
+      energyCheckIn.dedupedCount +
+      plannedBlocks.dedupedCount +
+      reviews.dedupedCount +
+      quickCaptures.dedupedCount,
   };
 }

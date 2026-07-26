@@ -32,6 +32,10 @@ import {
 } from "../constants/researchStorage";
 import { APP_SETTINGS_STORAGE_KEY } from "../constants/settingsStorage";
 import {
+  AVAILABLE_SPOONS_STORAGE_KEY,
+  QUICK_CAPTURES_STORAGE_KEY,
+} from "../../features/dashboard/utils/planningStorage";
+import {
   TEACHING_ANNOUNCEMENT_REMINDERS_STORAGE_KEY,
   TEACHING_ASSISTANTS_STORAGE_KEY,
   TEACHING_COURSE_NOTE_DRAFT_PREFIX,
@@ -175,7 +179,7 @@ export const APP_STORAGE_KEYS: AppStorageKeyDefinition[] = [
   { key: "ssg2.lastTaskSyncError", category: "shared-tasks", label: "Last task sync error" },
   { key: "ssg2.taskCloudUserId", category: "shared-tasks", label: "Task cloud user id" },
 
-  { key: "ssg2.availableSpoons", category: "dashboard", label: "Available spoons" },
+  { key: AVAILABLE_SPOONS_STORAGE_KEY, category: "dashboard", label: "Available spoons" },
   { key: "ssg2.dailyCheckIns", category: "dashboard", label: "Daily check-ins and working blocks" },
   { key: "ssg2.workingBlocks", category: "dashboard", label: "Legacy working blocks" },
   { key: "ssg2.plannedTaskBlocks", category: "dashboard", label: "Planned task blocks" },
@@ -184,7 +188,7 @@ export const APP_STORAGE_KEYS: AppStorageKeyDefinition[] = [
   { key: "ssg2.lastPlanningSyncAt", category: "dashboard", label: "Last planning sync time" },
   { key: "ssg2.lastPlanningSyncError", category: "dashboard", label: "Last planning sync error" },
   { key: "ssg2.planningCloudUserId", category: "dashboard", label: "Planning cloud user id" },
-  { key: "ssg2.quickCaptures", category: "dashboard", label: "Dashboard quick captures" },
+  { key: QUICK_CAPTURES_STORAGE_KEY, category: "dashboard", label: "Dashboard quick captures" },
   { key: MANUAL_WORK_LOGS_STORAGE_KEY, category: "dashboard", label: "Manual work logs" },
   { key: GOOGLE_CALENDAR_EVENTS_STORAGE_KEY, category: "dashboard", label: "Imported Google Calendar events" },
 

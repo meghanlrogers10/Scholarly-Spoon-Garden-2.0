@@ -49,7 +49,6 @@ import {
   TIMER_SESSIONS_STORAGE_KEY,
 } from "../constants/timerStorage";
 import {
-  CLOUD_SAVE_ENABLED_KEY,
   CLOUD_SAVE_LAST_AREA_STATUS_KEY,
   CLOUD_SAVE_USER_ID_KEY,
   LAST_CLOUD_SAVE_ERROR_KEY,
@@ -175,13 +174,17 @@ import {
 } from "../firebase/timerSyncMetadata";
 import {
   DAILY_CHECK_IN_STORAGE_KEY,
+  AVAILABLE_SPOONS_STORAGE_KEY,
   END_OF_DAY_REVIEW_STORAGE_KEY,
   getPlanningCounts,
   mergePlanningForSync,
+  normalizeCapturedItems,
   normalizeDailyCheckIns,
+  normalizeEnergyCheckIn,
   normalizeEndOfDayReviews,
   normalizePlannedTaskBlocks,
   PLANNED_TASK_BLOCK_STORAGE_KEY,
+  QUICK_CAPTURES_STORAGE_KEY,
 } from "../../features/dashboard/utils/planningStorage";
 import { defaultAppSettings } from "../types/settings";
 import { TASK_STORAGE_KEY, normalizeTasks } from "../hooks/useTaskBridge";
@@ -349,20 +352,26 @@ async function syncTasks(uid: string) {
 
 async function syncPlanning(uid: string) {
   const localSnapshot = {
+    energyCheckIn: normalizeEnergyCheckIn(readJson(AVAILABLE_SPOONS_STORAGE_KEY, null)),
     checkIns: normalizeDailyCheckIns(readJson(DAILY_CHECK_IN_STORAGE_KEY, [])),
     plannedBlocks: normalizePlannedTaskBlocks(readJson(PLANNED_TASK_BLOCK_STORAGE_KEY, [])),
     reviews: normalizeEndOfDayReviews(readJson(END_OF_DAY_REVIEW_STORAGE_KEY, [])),
+    quickCaptures: normalizeCapturedItems(readJson(QUICK_CAPTURES_STORAGE_KEY, [])),
   };
   const cloudSnapshot = await listUserPlanningData(uid);
   const mergeResult = mergePlanningForSync(localSnapshot, cloudSnapshot);
 
   await batchUploadUserPlanningData(uid, mergeResult);
+  if (mergeResult.energyCheckIn) {
+    writeJson(AVAILABLE_SPOONS_STORAGE_KEY, mergeResult.energyCheckIn.availableSpoons);
+  }
   writeJson(DAILY_CHECK_IN_STORAGE_KEY, mergeResult.checkIns);
   writeJson(PLANNED_TASK_BLOCK_STORAGE_KEY, mergeResult.plannedBlocks);
   writeJson(END_OF_DAY_REVIEW_STORAGE_KEY, mergeResult.reviews);
+  writeJson(QUICK_CAPTURES_STORAGE_KEY, mergeResult.quickCaptures);
 
   const counts = getPlanningCounts(mergeResult);
-  return `Planning merged. ${counts.checkIns} check-ins, ${counts.workingBlocks} working blocks, ${counts.plannedBlocks} planned blocks.`;
+  return `Planning merged. ${counts.checkIns} check-ins, ${counts.energyCheckIn} energy check-in, ${counts.workingBlocks} working blocks, ${counts.plannedBlocks} planned blocks, ${counts.quickCaptures} quick captures.`;
 }
 
 async function syncTimer(uid: string) {
@@ -574,12 +583,8 @@ export function requestCloudSaveSync() {
   window.dispatchEvent(new Event(CLOUD_SAVE_REQUEST_SYNC_EVENT));
 }
 
-function isCloudSaveEnabled() {
-  return readJson(CLOUD_SAVE_ENABLED_KEY, true);
-}
-
 export function canAttemptCloudSave(uid: string | null | undefined) {
-  return Boolean(uid && isFirebaseConfigured && isCloudSaveEnabled() && navigator.onLine);
+  return Boolean(uid && isFirebaseConfigured && navigator.onLine);
 }
 
 const categoryToArea: Partial<Record<AppStorageCategory, CloudSaveArea>> = {
