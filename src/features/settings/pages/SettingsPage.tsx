@@ -622,7 +622,7 @@ export function SettingsPage() {
           <div className="settings-toggle-list">
             <ToggleRow
               label="Sound alerts"
-              description="Optional. Off by default so the app does not jumpscare you."
+              description="Play a three-part success chime three times when a focus timer ends."
               checked={settings.timerSoundAlerts}
               onChange={(checked) => updateSettings({ timerSoundAlerts: checked })}
             />

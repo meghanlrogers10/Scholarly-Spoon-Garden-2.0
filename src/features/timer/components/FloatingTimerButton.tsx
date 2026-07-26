@@ -131,7 +131,7 @@ function clampSpoons(value: number) {
   return value;
 }
 
-function playTimerBeep() {
+function playSuccessChime() {
   try {
     const audioWindow = window as typeof window & {
       webkitAudioContext?: typeof AudioContext;
@@ -144,16 +144,38 @@ function playTimerBeep() {
     }
 
     const audioContext = new AudioContextClass();
-    const oscillator = audioContext.createOscillator();
-    const gain = audioContext.createGain();
+    const startTime = audioContext.currentTime + 0.05;
+    const notes = [
+      { frequency: 784, offset: 0, duration: 0.16 },
+      { frequency: 988, offset: 0.12, duration: 0.16 },
+      { frequency: 1319, offset: 0.24, duration: 0.3 },
+    ];
 
-    oscillator.type = "sine";
-    oscillator.frequency.value = 740;
-    gain.gain.value = 0.08;
-    oscillator.connect(gain);
-    gain.connect(audioContext.destination);
-    oscillator.start();
-    oscillator.stop(audioContext.currentTime + 0.18);
+    [0, 0.75, 1.5].forEach((repeatOffset) => {
+      notes.forEach(({ frequency, offset, duration }) => {
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        const noteStart = startTime + repeatOffset + offset;
+
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(frequency, noteStart);
+        gain.gain.setValueAtTime(0.0001, noteStart);
+        gain.gain.exponentialRampToValueAtTime(0.12, noteStart + 0.02);
+        gain.gain.exponentialRampToValueAtTime(
+          0.0001,
+          noteStart + duration,
+        );
+        oscillator.connect(gain);
+        gain.connect(audioContext.destination);
+        oscillator.start(noteStart);
+        oscillator.stop(noteStart + duration + 0.03);
+      });
+    });
+
+    void audioContext.resume().catch(() => undefined);
+    window.setTimeout(() => {
+      void audioContext.close().catch(() => undefined);
+    }, 2500);
   } catch {
     // Audio is optional; the visual alert still carries the completion state.
   }
@@ -304,7 +326,7 @@ export function FloatingTimerButton() {
     }
 
     if (settings.timerSoundAlerts) {
-      playTimerBeep();
+      playSuccessChime();
     }
 
     if (

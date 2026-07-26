@@ -64,7 +64,7 @@ export const defaultAppSettings: AppSettings = {
   timerPomodoroMinutes: 25,
   timerBreakMinutes: 5,
   longRunningTimerWarningMinutes: 120,
-  timerSoundAlerts: false,
+  timerSoundAlerts: true,
   timerVisualAlerts: true,
   timerReflectionLevel: "light",
 
