@@ -383,6 +383,15 @@ describe("settings and backup interactions", () => {
     assert.equal(settingsSource.includes("Show sample calendar events"), false);
   });
 
+  it("keeps login account creation wired through the form and names the mascot Dr. Sprout", () => {
+    const loginSource = readSource("src/features/auth/pages/LoginPage.tsx");
+
+    assert.equal(loginSource.includes("Dr. Sprout"), true);
+    assert.equal(loginSource.includes("Professor Sprout"), false);
+    assert.equal(loginSource.includes('value="signup"'), true);
+    assert.equal(loginSource.includes("signUpWithEmail"), true);
+  });
+
   it("creates dated backup filenames and downloads only when the download helper is called", () => {
     assert.match(
       createBackupFilename("scholarly-spoon-garden-test"),
