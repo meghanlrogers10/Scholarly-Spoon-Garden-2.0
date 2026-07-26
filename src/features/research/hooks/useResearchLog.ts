@@ -4,6 +4,8 @@ import type {
   ResearchLogEntry,
   ResearchLogEntryInput,
   ResearchLogEntryType,
+  ResearchLogAttachment,
+  ResearchSourceFile,
   ResearchResultBlock,
   ResearchResultBlockType,
   ResearchResultOutputType,
@@ -48,6 +50,47 @@ function readStringArray(value: unknown) {
   return Array.isArray(value)
     ? value.filter((item): item is string => typeof item === "string")
     : [];
+}
+
+function normalizeAttachment(
+  value: unknown,
+  fallbackId: string,
+): ResearchLogAttachment | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const name = readOptionalString(value.name);
+  const dataUrl = readOptionalString(value.dataUrl);
+
+  if (!name || !dataUrl) {
+    return undefined;
+  }
+
+  return {
+    id: readOptionalString(value.id) ?? fallbackId,
+    name,
+    mimeType: readOptionalString(value.mimeType) ?? "application/octet-stream",
+    size: typeof value.size === "number" ? value.size : 0,
+    dataUrl,
+    createdAt: readOptionalString(value.createdAt) ?? new Date().toISOString(),
+  };
+}
+
+function normalizeSourceFile(value: unknown): ResearchSourceFile | undefined {
+  const attachment = normalizeAttachment(value, "source-file");
+
+  if (!attachment) {
+    return undefined;
+  }
+
+  return {
+    ...attachment,
+    lastModified:
+      typeof (value as Record<string, unknown>).lastModified === "number"
+        ? ((value as Record<string, unknown>).lastModified as number)
+        : undefined,
+  };
 }
 
 function normalizeResultBlock(
@@ -108,6 +151,13 @@ function normalizeEntry(value: unknown): ResearchLogEntry | undefined {
         .map((block, index) => normalizeResultBlock(block, id, index, createdAt))
         .filter((block): block is ResearchResultBlock => Boolean(block))
     : undefined;
+  const attachments = Array.isArray(value.attachments)
+    ? value.attachments
+        .map((attachment, index) =>
+          normalizeAttachment(attachment, `${id}-attachment-${index}`),
+        )
+        .filter((attachment): attachment is ResearchLogAttachment => Boolean(attachment))
+    : undefined;
 
   return {
     id,
@@ -115,6 +165,10 @@ function normalizeEntry(value: unknown): ResearchLogEntry | undefined {
     entryType,
     title: readOptionalString(value.title) ?? "Untitled log entry",
     body: readOptionalString(value.body) ?? "No details added yet.",
+    bodyHtml: readOptionalString(value.bodyHtml),
+    branch: readOptionalString(value.branch) ?? "Main",
+    sourceFile: normalizeSourceFile(value.sourceFile),
+    attachments,
     doFile: readOptionalString(value.doFile),
     folderPath: readOptionalString(value.folderPath),
     datasetUsed: readOptionalString(value.datasetUsed),
@@ -166,8 +220,12 @@ function createEntryId(projectId: string) {
   return `${projectId}-log-${suffix}`;
 }
 
-function getResultFields(input: ResearchLogEntryInput) {
+function getEntryContentFields(input: ResearchLogEntryInput) {
   return {
+    bodyHtml: input.bodyHtml?.trim() || undefined,
+    branch: input.branch?.trim() || "Main",
+    sourceFile: input.sourceFile,
+    attachments: input.attachments ?? [],
     doFile: input.doFile?.trim() || undefined,
     folderPath: input.folderPath?.trim() || undefined,
     datasetUsed: input.datasetUsed?.trim() || undefined,
@@ -231,7 +289,7 @@ export function useResearchLog() {
       entryType: input.entryType,
       title: input.title.trim(),
       body: input.body.trim(),
-      ...(input.entryType === "results" ? getResultFields(input) : {}),
+      ...getEntryContentFields(input),
       pinned: input.pinned,
       createdAt: now,
       updatedAt: now,
@@ -251,17 +309,7 @@ export function useResearchLog() {
               entryType: input.entryType,
               title: input.title.trim(),
               body: input.body.trim(),
-              doFile: undefined,
-              folderPath: undefined,
-              datasetUsed: undefined,
-              outputLabel: undefined,
-              outputType: undefined,
-              commandNotes: undefined,
-              runDate: undefined,
-              versionCheckpoint: undefined,
-              resultBlocks: undefined,
-              tags: undefined,
-              ...(input.entryType === "results" ? getResultFields(input) : {}),
+              ...getEntryContentFields(input),
               pinned: input.pinned,
               updatedAt: now,
             }

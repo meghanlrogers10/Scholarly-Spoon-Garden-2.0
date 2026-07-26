@@ -37,6 +37,58 @@ function formatEntryDate(value: string) {
   }).format(new Date(value));
 }
 
+function escapeExportHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;")
+    .replaceAll("\n", "<br />");
+}
+
+function entryExportHtml(entry: ResearchLogEntry) {
+  const body = entry.bodyHtml || escapeExportHtml(entry.body);
+  const source = entry.sourceFile
+    ? `<p class="source"><strong>Source:</strong> <a href="${entry.sourceFile.dataUrl}">${escapeExportHtml(entry.sourceFile.name)}</a></p>`
+    : "";
+  const attachments = (entry.attachments ?? [])
+    .map((attachment) =>
+      attachment.mimeType.startsWith("image/")
+        ? `<figure><img src="${attachment.dataUrl}" alt="${escapeExportHtml(attachment.name)}" /><figcaption>${escapeExportHtml(attachment.name)}</figcaption></figure>`
+        : `<p><a href="${attachment.dataUrl}">${escapeExportHtml(attachment.name)}</a></p>`,
+    )
+    .join("");
+
+  return `<article><p class="meta">${escapeExportHtml(entry.branch || "Main")} · ${escapeExportHtml(entry.entryType)} · ${escapeExportHtml(formatEntryDate(entry.createdAt))}</p><h2>${escapeExportHtml(entry.title)}</h2>${source}<div>${body}</div>${attachments}</article>`;
+}
+
+function buildResearchLogExport(projectTitle: string, entries: ResearchLogEntry[]) {
+  const branchNames = Array.from(new Set(entries.map((entry) => entry.branch || "Main")));
+  const sections = branchNames
+    .map((branchName) => {
+      const branchEntries = entries.filter(
+        (entry) => (entry.branch || "Main") === branchName,
+      );
+      return `<section><h1>${escapeExportHtml(branchName)}</h1>${branchEntries
+        .map(entryExportHtml)
+        .join("")}</section>`;
+    })
+    .join("");
+
+  return `<!doctype html><html><head><meta charset="utf-8" /><title>${escapeExportHtml(projectTitle)} Research Log</title><style>body{font-family:Arial,sans-serif;max-width:900px;margin:40px auto;line-height:1.5;color:#202b2c}article{border-top:1px solid #ccd5d3;padding:24px 0}h1{margin-top:40px}.meta,.source{color:#60706e;font-size:14px}img{max-width:100%;height:auto}figure{margin:18px 0}figcaption{color:#60706e;font-size:13px}</style></head><body><h1>${escapeExportHtml(projectTitle)} Research Log</h1><p>Exported ${escapeExportHtml(new Date().toLocaleString())}</p>${sections}</body></html>`;
+}
+
+function downloadResearchExport(fileName: string, content: string, type: string) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 export function ResearchLogPage() {
   const { projectId } = useParams();
   const location = useLocation();
@@ -44,6 +96,8 @@ export function ResearchLogPage() {
   const [editingEntry, setEditingEntry] = useState<ResearchLogEntry | null>(
     null
   );
+  const [selectedBranch, setSelectedBranch] = useState("Main");
+  const [newBranchName, setNewBranchName] = useState("");
 
   const { projects } = useResearchProjects();
   const {
@@ -84,15 +138,32 @@ export function ResearchLogPage() {
 
   const currentProject = project;
   const entries = getEntriesForProject(projectId);
+  const branchNames = Array.from(
+    new Set(["Main", ...entries.map((entry) => entry.branch || "Main")]),
+  );
+  const activeBranch = branchNames.includes(selectedBranch) ? selectedBranch : "Main";
+  const visibleEntries = entries.filter(
+    (entry) => (entry.branch || "Main") === activeBranch,
+  );
   const pinnedEntries = entries.filter((entry) => entry.pinned);
   const decisions = entries.filter((entry) => entry.entryType === "decision");
   const blockers = entries.filter((entry) => entry.entryType === "blocker");
-  const nextActions = entries.filter(
-    (entry) => entry.entryType === "next-action"
-  );
   const resultsEntries = entries.filter((entry) => entry.entryType === "results");
 
   function openNewEntryModal() {
+    setEditingEntry(null);
+    setIsLogModalOpen(true);
+  }
+
+  function handleCreateBranch() {
+    const cleanedName = newBranchName.trim();
+
+    if (!cleanedName) {
+      return;
+    }
+
+    setSelectedBranch(cleanedName);
+    setNewBranchName("");
     setEditingEntry(null);
     setIsLogModalOpen(true);
   }
@@ -135,6 +206,37 @@ export function ResearchLogPage() {
     });
   }
 
+  function exportResearchLog(format: "html" | "word" | "print") {
+    const html = buildResearchLogExport(currentProject.title, entries);
+
+    if (format === "html") {
+      downloadResearchExport(
+        `${currentProject.shortName || "research"}-log.html`,
+        html,
+        "text/html;charset=utf-8",
+      );
+      return;
+    }
+
+    if (format === "word") {
+      downloadResearchExport(
+        `${currentProject.shortName || "research"}-log.doc`,
+        html,
+        "application/msword",
+      );
+      return;
+    }
+
+    const printWindow = window.open("", "_blank", "noopener,noreferrer");
+
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+    }
+  }
+
   return (
     <section className="research-page page-stack">
       <div className="research-hero-panel">
@@ -153,6 +255,27 @@ export function ResearchLogPage() {
 
         <div className="research-hero-panel__actions">
           <button
+            className="research-chip-button"
+            type="button"
+            onClick={() => exportResearchLog("html")}
+          >
+            Export HTML
+          </button>
+          <button
+            className="research-chip-button"
+            type="button"
+            onClick={() => exportResearchLog("word")}
+          >
+            Export Word
+          </button>
+          <button
+            className="research-chip-button"
+            type="button"
+            onClick={() => exportResearchLog("print")}
+          >
+            Print / PDF
+          </button>
+          <button
             className="research-primary-button"
             type="button"
             onClick={openNewEntryModal}
@@ -166,15 +289,78 @@ export function ResearchLogPage() {
 
       <div className="research-task-summary">
         <span>{entries.length} entries</span>
+        <span>{branchNames.length} branches</span>
         <span>{pinnedEntries.length} pinned</span>
         <span>{decisions.length} decisions</span>
         <span>{blockers.length} blockers</span>
-        <span>{nextActions.length} next actions</span>
         <span>{resultsEntries.length} results</span>
       </div>
 
+      <section className="research-notebook-shell">
+        <aside className="research-branch-sidebar" aria-label="Research log branches">
+          <div className="research-branch-sidebar__header">
+            <div>
+              <p className="eyebrow">Notebook</p>
+              <h2>Branches</h2>
+            </div>
+          </div>
+          <div className="research-branch-list">
+            {branchNames.map((branchName) => (
+              <button
+                key={branchName}
+                type="button"
+                className={`research-branch-button${
+                  activeBranch === branchName ? " is-active" : ""
+                }`}
+                onClick={() => setSelectedBranch(branchName)}
+              >
+                <span>{branchName}</span>
+                <small>
+                  {entries.filter((entry) => (entry.branch || "Main") === branchName).length}
+                </small>
+              </button>
+            ))}
+          </div>
+          <div className="research-branch-create">
+            <input
+              value={newBranchName}
+              onChange={(event) => setNewBranchName(event.target.value)}
+              placeholder="New branch"
+              onKeyDown={(event) => {
+                if (event.key === "Enter") handleCreateBranch();
+              }}
+            />
+            <button
+              className="research-chip-button"
+              type="button"
+              onClick={handleCreateBranch}
+              disabled={!newBranchName.trim()}
+            >
+              + Branch
+            </button>
+          </div>
+        </aside>
+
+        <div className="research-notebook-main">
+          <div className="research-notebook-main__header">
+            <div>
+              <p className="eyebrow">Current branch</p>
+              <h2>{activeBranch}</h2>
+              <p className="research-muted-copy">
+                Paste tables, images, and notes directly into one running research trail.
+              </p>
+            </div>
+            <button
+              className="research-primary-button"
+              type="button"
+              onClick={openNewEntryModal}
+            >
+              + Add note
+            </button>
+          </div>
+
       <section className="research-log-list">
-        {entries.map((entry) => (
+        {visibleEntries.map((entry) => (
           <article
             key={entry.id}
             className={`research-log-card research-log-card--${entry.entryType}`}
@@ -188,6 +374,10 @@ export function ResearchLogPage() {
                 </p>
 
                 <h2>{entry.title}</h2>
+                <p className="research-log-card__provenance">
+                  {entry.branch || "Main"}
+                  {entry.sourceFile ? ` · Source: ${entry.sourceFile.name}` : ""}
+                </p>
               </div>
 
               <button
@@ -273,13 +463,58 @@ export function ResearchLogPage() {
                   </div>
                 ) : null}
 
-                <p className="research-log-card__body">
-                  <strong>Interpretation:</strong> {entry.body}
-                </p>
+                {entry.bodyHtml ? (
+                  <div
+                    className="research-log-card__body research-log-card__body--rich"
+                    dangerouslySetInnerHTML={{ __html: entry.bodyHtml }}
+                  />
+                ) : (
+                  <p className="research-log-card__body">
+                    <strong>Interpretation:</strong> {entry.body}
+                  </p>
+                )}
               </div>
             ) : (
-              <p className="research-log-card__body">{entry.body}</p>
+              entry.bodyHtml ? (
+                <div
+                  className="research-log-card__body research-log-card__body--rich"
+                  dangerouslySetInnerHTML={{ __html: entry.bodyHtml }}
+                />
+              ) : (
+                <p className="research-log-card__body">{entry.body}</p>
+              )
             )}
+
+            {entry.sourceFile || entry.attachments?.length ? (
+              <div className="research-log-card__files">
+                {entry.sourceFile ? (
+                  <a
+                    className="research-file-link"
+                    href={entry.sourceFile.dataUrl}
+                    download={entry.sourceFile.name}
+                  >
+                    Source: {entry.sourceFile.name}
+                  </a>
+                ) : null}
+                {entry.attachments?.map((attachment) =>
+                  attachment.mimeType.startsWith("image/") ? (
+                    <figure key={attachment.id} className="research-log-attachment-image">
+                      <img src={attachment.dataUrl} alt={attachment.name} />
+                      <figcaption>{attachment.name}</figcaption>
+                    </figure>
+                  ) : (
+                    <a
+                      key={attachment.id}
+                      className="research-file-link"
+                      href={attachment.dataUrl}
+                      download={attachment.name}
+                    >
+                      {attachment.name}
+                    </a>
+                  ),
+                )}
+              </div>
+            ) : null}
 
             <div className="research-project-card__actions">
               <button
@@ -314,17 +549,20 @@ export function ResearchLogPage() {
           </article>
         ))}
 
-        {entries.length === 0 ? (
+        {visibleEntries.length === 0 ? (
           <div className="research-empty-state">
-            No log entries yet. Add one sentence about what future you needs to
-            remember.
+            This branch is empty. Add a quick note, paste a table, or attach the
+            source file that produced the result.
           </div>
         ) : null}
+          </section>
+        </div>
       </section>
 
       {isLogModalOpen ? (
         <ResearchLogEntryModal
           projectId={projectId}
+          branchName={editingEntry?.branch ?? activeBranch}
           entry={editingEntry ?? undefined}
           onClose={closeLogModal}
           onSaveEntry={handleSaveEntry}

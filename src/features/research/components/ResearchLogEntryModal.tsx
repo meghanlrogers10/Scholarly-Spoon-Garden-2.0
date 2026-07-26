@@ -7,15 +7,18 @@ import {
 import { ResearchLargeContentWarning } from "./ResearchLargeContentWarning";
 import type {
   ResearchLogEntry,
+  ResearchLogAttachment,
   ResearchLogEntryInput,
   ResearchLogEntryType,
   ResearchResultBlock,
   ResearchResultBlockType,
   ResearchResultOutputType,
+  ResearchSourceFile,
 } from "../types";
 
 type ResearchLogEntryModalProps = {
   projectId: string;
+  branchName: string;
   entry?: ResearchLogEntry;
   onClose: () => void;
   onSaveEntry: (entry: ResearchLogEntryInput) => void;
@@ -83,8 +86,43 @@ function sanitizePastedTableHtml(value: string) {
     .replace(/javascript:/gi, "");
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;")
+    .replaceAll("\n", "<br />");
+}
+
+function readFileAsAttachment(file: File): Promise<ResearchLogAttachment> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      if (typeof reader.result !== "string") {
+        reject(new Error("File could not be read."));
+        return;
+      }
+
+      resolve({
+        id: `attachment-${crypto.randomUUID()}`,
+        name: file.name,
+        mimeType: file.type || "application/octet-stream",
+        size: file.size,
+        dataUrl: reader.result,
+        createdAt: new Date().toISOString(),
+      });
+    };
+    reader.onerror = () => reject(reader.error ?? new Error("File could not be read."));
+    reader.readAsDataURL(file);
+  });
+}
+
 export function ResearchLogEntryModal({
   projectId,
+  branchName,
   entry,
   onClose,
   onSaveEntry,
@@ -94,6 +132,13 @@ export function ResearchLogEntryModal({
   );
   const [title, setTitle] = useState(entry?.title ?? "");
   const [body, setBody] = useState(entry?.body ?? "");
+  const [bodyHtml, setBodyHtml] = useState(entry?.bodyHtml ?? "");
+  const [sourceFile, setSourceFile] = useState<ResearchSourceFile | undefined>(
+    entry?.sourceFile,
+  );
+  const [attachments, setAttachments] = useState<ResearchLogAttachment[]>(
+    entry?.attachments ?? [],
+  );
   const [pinned, setPinned] = useState(entry?.pinned ?? false);
   const [doFile, setDoFile] = useState(entry?.doFile ?? "");
   const [folderPath, setFolderPath] = useState(entry?.folderPath ?? "");
@@ -113,6 +158,7 @@ export function ResearchLogEntryModal({
   );
   const largeContentFields = [
     { label: "entry body", value: body },
+    { label: "formatted entry body", value: bodyHtml },
     { label: "command notes", value: commandNotes },
     ...resultBlocks.flatMap((block, index) => [
       {
@@ -132,6 +178,11 @@ export function ResearchLogEntryModal({
         value: block.caption,
       },
     ]),
+    { label: "source file", value: sourceFile?.dataUrl },
+    ...attachments.map((attachment, index) => ({
+      label: `attachment ${index + 1}`,
+      value: attachment.dataUrl,
+    })),
   ];
 
   function updateResultBlock(
@@ -196,6 +247,60 @@ export function ResearchLogEntryModal({
     reader.readAsDataURL(file);
   }
 
+  async function handleSourceFileUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    try {
+      const attachment = await readFileAsAttachment(file);
+      setSourceFile({ ...attachment, lastModified: file.lastModified });
+    } catch {
+      return;
+    }
+  }
+
+  async function handleAttachmentUpload(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = "";
+
+    const nextAttachments = await Promise.all(
+      files.map((file) => readFileAsAttachment(file).catch(() => undefined)),
+    );
+    setAttachments((currentAttachments) => [
+      ...currentAttachments,
+      ...nextAttachments.filter(
+        (attachment): attachment is ResearchLogAttachment => Boolean(attachment),
+      ),
+    ]);
+  }
+
+  async function handleBodyPaste(event: ClipboardEvent<HTMLDivElement>) {
+    const files = Array.from(event.clipboardData.files ?? []);
+
+    if (files.length > 0) {
+      const pastedAttachments = await Promise.all(
+        files.map((file) => readFileAsAttachment(file).catch(() => undefined)),
+      );
+      setAttachments((currentAttachments) => [
+        ...currentAttachments,
+        ...pastedAttachments.filter(
+          (attachment): attachment is ResearchLogAttachment => Boolean(attachment),
+        ),
+      ]);
+    }
+
+    const html = event.clipboardData.getData("text/html");
+
+    if (html) {
+      event.preventDefault();
+      document.execCommand("insertHTML", false, sanitizePastedTableHtml(html));
+    }
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -211,6 +316,10 @@ export function ResearchLogEntryModal({
       entryType,
       title: cleanedTitle,
       body: cleanedBody || "No details added yet.",
+      bodyHtml: bodyHtml ? sanitizePastedTableHtml(bodyHtml) : undefined,
+      branch: branchName,
+      sourceFile,
+      attachments,
       pinned,
       ...(entryType === "results"
         ? {
@@ -298,6 +407,57 @@ export function ResearchLogEntryModal({
               autoFocus
             />
           </label>
+
+          <div className="research-log-provenance-grid">
+            <label>
+              <span>Source file</span>
+              <input
+                type="file"
+                accept=".do,.ado,.dta,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg,.pdf"
+                onChange={handleSourceFileUpload}
+              />
+              {sourceFile ? (
+                <span className="research-file-chip">
+                  {sourceFile.name} · {Math.max(1, Math.round(sourceFile.size / 1024))} KB
+                  <button
+                    type="button"
+                    className="research-chip-button"
+                    onClick={() => setSourceFile(undefined)}
+                  >
+                    Remove
+                  </button>
+                </span>
+              ) : (
+                <small>Keep the do-file, Word document, spreadsheet, or other origin attached.</small>
+              )}
+            </label>
+
+            <label>
+              <span>Attachments</span>
+              <input type="file" multiple onChange={handleAttachmentUpload} />
+              <small>Paste tables or images into the entry, or add graph files here.</small>
+              {attachments.length > 0 ? (
+                <div className="research-file-chip-list">
+                  {attachments.map((attachment) => (
+                    <span className="research-file-chip" key={attachment.id}>
+                      {attachment.name}
+                      <button
+                        type="button"
+                        className="research-chip-button"
+                        onClick={() =>
+                          setAttachments((currentAttachments) =>
+                            currentAttachments.filter((item) => item.id !== attachment.id),
+                          )
+                        }
+                      >
+                        Remove
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </label>
+          </div>
 
           {entryType === "results" ? (
             <>
@@ -400,11 +560,19 @@ export function ResearchLogEntryModal({
 
               <label>
                 <span>Interpretation</span>
-                <textarea
-                  value={body}
-                  onChange={(event) => setBody(event.target.value)}
-                  placeholder="What does this result mean? What should future you remember?"
-                  rows={5}
+                <div
+                  className="research-rich-editor"
+                  contentEditable
+                  suppressContentEditableWarning
+                  role="textbox"
+                  onPaste={handleBodyPaste}
+                  onInput={(event) => {
+                    setBody(event.currentTarget.innerText);
+                    setBodyHtml(sanitizePastedTableHtml(event.currentTarget.innerHTML));
+                  }}
+                  dangerouslySetInnerHTML={{
+                    __html: bodyHtml ? sanitizePastedTableHtml(bodyHtml) : escapeHtml(body),
+                  }}
                 />
               </label>
 
@@ -580,11 +748,19 @@ export function ResearchLogEntryModal({
           ) : (
             <label>
               <span>Entry</span>
-              <textarea
-                value={body}
-                onChange={(event) => setBody(event.target.value)}
-                placeholder="What happened? What did you decide? What is blocked? What should future you know?"
-                rows={6}
+              <div
+                className="research-rich-editor"
+                contentEditable
+                suppressContentEditableWarning
+                role="textbox"
+                onPaste={handleBodyPaste}
+                onInput={(event) => {
+                  setBody(event.currentTarget.innerText);
+                  setBodyHtml(sanitizePastedTableHtml(event.currentTarget.innerHTML));
+                }}
+                dangerouslySetInnerHTML={{
+                  __html: bodyHtml ? sanitizePastedTableHtml(bodyHtml) : escapeHtml(body),
+                }}
               />
             </label>
           )}
