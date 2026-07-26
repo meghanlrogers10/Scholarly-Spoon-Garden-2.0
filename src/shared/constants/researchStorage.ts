@@ -1,4 +1,6 @@
 export const RESEARCH_PROJECTS_STORAGE_KEY = "ssg:researchProjects";
+export const RESEARCH_PERMANENTLY_DELETED_PROJECT_IDS_STORAGE_KEY =
+  "ssg:researchPermanentlyDeletedProjectIds";
 export const RESEARCH_TASKS_STORAGE_KEY = "ssg:researchTasks";
 export const RESEARCH_LOG_ENTRIES_STORAGE_KEY = "ssg:researchLogEntries";
 export const RESEARCH_DRAFTS_STORAGE_KEY = "ssg:researchDrafts";

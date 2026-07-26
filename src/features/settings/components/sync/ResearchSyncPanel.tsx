@@ -6,6 +6,7 @@ import {
   RESEARCH_LOG_ENTRIES_STORAGE_KEY,
   RESEARCH_MIND_MAP_EDGES_STORAGE_KEY,
   RESEARCH_MIND_MAP_NODES_STORAGE_KEY,
+  RESEARCH_PERMANENTLY_DELETED_PROJECT_IDS_STORAGE_KEY,
   RESEARCH_PRISMA_CRITERIA_STORAGE_KEY,
   RESEARCH_PRISMA_RECORDS_STORAGE_KEY,
   RESEARCH_PROJECTS_STORAGE_KEY,
@@ -88,6 +89,10 @@ export function ResearchSyncPanel({
     useLocalStorage<unknown[]>(RESEARCH_PRISMA_RECORDS_STORAGE_KEY, []);
   const [storedResearchPrismaCriteria, setStoredResearchPrismaCriteria] =
     useLocalStorage<unknown[]>(RESEARCH_PRISMA_CRITERIA_STORAGE_KEY, []);
+  const [permanentlyDeletedResearchProjectIds] = useLocalStorage<string[]>(
+    RESEARCH_PERMANENTLY_DELETED_PROJECT_IDS_STORAGE_KEY,
+    [],
+  );
   const [researchSyncEnabled, setResearchSyncEnabled] =
     useLocalStorage<boolean>(RESEARCH_SYNC_ENABLED_KEY, true);
   const [lastResearchSyncAt, setLastResearchSyncAt] = useLocalStorage<string>(
@@ -234,6 +239,7 @@ export function ResearchSyncPanel({
           user.uid,
           localResearchSnapshot,
           cloudSnapshot,
+          { permanentlyDeletedProjectIds: permanentlyDeletedResearchProjectIds },
         );
         saveLocalResearchSnapshot(mergeResult);
         setCloudResearchCounts(getResearchCounts(mergeResult));
@@ -249,11 +255,14 @@ export function ResearchSyncPanel({
       const mergeResult = mergeResearchDataForSync(
         localResearchSnapshot,
         cloudSnapshot,
+        { permanentlyDeletedProjectIds: permanentlyDeletedResearchProjectIds },
       );
       saveLocalResearchSnapshot(mergeResult);
 
       if (action === "merge") {
-        const uploadResult = await batchUploadUserResearchData(user.uid, mergeResult);
+        const uploadResult = await batchUploadUserResearchData(user.uid, mergeResult, {
+          permanentDeletionTargets: mergeResult.permanentDeletionTargets,
+        });
         setCloudResearchCounts(uploadResult.counts);
         setLastResearchSkippedLargeRecords(uploadResult.skippedLargeRecords);
         recordResearchSyncSuccess(

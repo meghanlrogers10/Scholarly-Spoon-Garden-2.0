@@ -22,6 +22,7 @@ import {
   RESEARCH_LOG_ENTRIES_STORAGE_KEY,
   RESEARCH_MIND_MAP_EDGES_STORAGE_KEY,
   RESEARCH_MIND_MAP_NODES_STORAGE_KEY,
+  RESEARCH_PERMANENTLY_DELETED_PROJECT_IDS_STORAGE_KEY,
   RESEARCH_PRISMA_CRITERIA_STORAGE_KEY,
   RESEARCH_PRISMA_RECORDS_STORAGE_KEY,
   RESEARCH_PROJECTS_STORAGE_KEY,
@@ -201,6 +202,7 @@ export const APP_STORAGE_KEYS: AppStorageKeyDefinition[] = [
   { key: "ssg2.timerPosition", category: "timer", label: "Floating timer position" },
 
   { key: RESEARCH_PROJECTS_STORAGE_KEY, category: "research", label: "Research projects" },
+  { key: RESEARCH_PERMANENTLY_DELETED_PROJECT_IDS_STORAGE_KEY, category: "research", label: "Permanently deleted Research projects" },
   { key: RESEARCH_TASKS_STORAGE_KEY, category: "research", label: "Research tasks" },
   { key: RESEARCH_LOG_ENTRIES_STORAGE_KEY, category: "research", label: "Research log entries" },
   { key: RESEARCH_DRAFTS_STORAGE_KEY, category: "research", label: "Research drafts" },

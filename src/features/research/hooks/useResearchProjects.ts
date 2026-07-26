@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { researchTaskBlueprints } from "../data/researchTaskBlueprints";
+import { RESEARCH_PERMANENTLY_DELETED_PROJECT_IDS_STORAGE_KEY } from "../../../shared/constants/researchStorage";
 import { writeLocalStorageValue } from "../../../shared/utils/localStorageSync";
 import type {
   NewResearchProjectInput,
@@ -61,6 +62,33 @@ function loadProjects() {
 
 function saveProjects(projects: ResearchProject[]) {
   writeLocalStorageValue(STORAGE_KEY, projects);
+}
+
+function loadPermanentlyDeletedProjectIds() {
+  try {
+    const saved = window.localStorage.getItem(
+      RESEARCH_PERMANENTLY_DELETED_PROJECT_IDS_STORAGE_KEY
+    );
+
+    if (!saved) {
+      return [];
+    }
+
+    const parsed = JSON.parse(saved) as unknown;
+
+    return Array.isArray(parsed)
+      ? parsed.filter((id): id is string => typeof id === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function rememberPermanentlyDeletedProject(projectId: string) {
+  writeLocalStorageValue(
+    RESEARCH_PERMANENTLY_DELETED_PROJECT_IDS_STORAGE_KEY,
+    Array.from(new Set([...loadPermanentlyDeletedProjectIds(), projectId]))
+  );
 }
 
 function calculateDueDate(durationMonths: number) {
@@ -275,6 +303,7 @@ function restoreProject(projectId: string) {
 }
 
 function permanentlyDeleteProject(projectId: string) {
+  rememberPermanentlyDeletedProject(projectId);
   setProjects((currentProjects) =>
     currentProjects.filter((project) => project.id !== projectId)
   );

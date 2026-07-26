@@ -18,6 +18,7 @@ import {
   RESEARCH_LOG_ENTRIES_STORAGE_KEY,
   RESEARCH_MIND_MAP_EDGES_STORAGE_KEY,
   RESEARCH_MIND_MAP_NODES_STORAGE_KEY,
+  RESEARCH_PERMANENTLY_DELETED_PROJECT_IDS_STORAGE_KEY,
   RESEARCH_PRISMA_CRITERIA_STORAGE_KEY,
   RESEARCH_PRISMA_RECORDS_STORAGE_KEY,
   RESEARCH_PROJECTS_STORAGE_KEY,
@@ -483,8 +484,15 @@ async function syncResearch(uid: string) {
     prismaCriteria: normalizeResearchPrismaCriteriaList(readJson(RESEARCH_PRISMA_CRITERIA_STORAGE_KEY, [])),
   };
   const cloudSnapshot = await listUserResearchData(uid);
-  const mergeResult = mergeResearchDataForSync(localSnapshot, cloudSnapshot);
-  const uploadResult = await batchUploadUserResearchData(uid, mergeResult);
+  const mergeResult = mergeResearchDataForSync(localSnapshot, cloudSnapshot, {
+    permanentlyDeletedProjectIds: readJson(
+      RESEARCH_PERMANENTLY_DELETED_PROJECT_IDS_STORAGE_KEY,
+      [],
+    ),
+  });
+  const uploadResult = await batchUploadUserResearchData(uid, mergeResult, {
+    permanentDeletionTargets: mergeResult.permanentDeletionTargets,
+  });
 
   writeJson(RESEARCH_PROJECTS_STORAGE_KEY, mergeResult.projects);
   writeJson(RESEARCH_TASKS_STORAGE_KEY, mergeResult.tasks);

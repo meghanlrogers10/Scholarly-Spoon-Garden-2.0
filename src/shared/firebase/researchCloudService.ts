@@ -85,6 +85,31 @@ export type ResearchMergeResult = ResearchCloudSnapshot & {
   addedCount: number;
   updatedCount: number;
   dedupedCount: number;
+  permanentDeletionTargets: ResearchPermanentDeletionTargets;
+};
+
+export type ResearchPermanentDeletionTargets = {
+  projectIds: string[];
+  taskIds: string[];
+  logEntryIds: string[];
+  draftIds: string[];
+  submissionIds: string[];
+  literatureSourceIds: string[];
+  literatureNoteIds: string[];
+  readingNoteIds: string[];
+  mindMapNodeIds: string[];
+  mindMapEdgeIds: string[];
+  synthesisSectionIds: string[];
+  prismaRecordIds: string[];
+  prismaCriteriaProjectIds: string[];
+};
+
+export type ResearchMergeOptions = {
+  permanentlyDeletedProjectIds?: string[];
+};
+
+export type ResearchUploadOptions = {
+  permanentDeletionTargets?: ResearchPermanentDeletionTargets;
 };
 
 type SyncRecord = {
@@ -116,6 +141,40 @@ const emptyCounts: ResearchCloudCounts = {
   prismaRecords: 0,
   prismaCriteria: 0,
 };
+
+const emptyPermanentDeletionTargets: ResearchPermanentDeletionTargets = {
+  projectIds: [],
+  taskIds: [],
+  logEntryIds: [],
+  draftIds: [],
+  submissionIds: [],
+  literatureSourceIds: [],
+  literatureNoteIds: [],
+  readingNoteIds: [],
+  mindMapNodeIds: [],
+  mindMapEdgeIds: [],
+  synthesisSectionIds: [],
+  prismaRecordIds: [],
+  prismaCriteriaProjectIds: [],
+};
+
+function createEmptyPermanentDeletionTargets(): ResearchPermanentDeletionTargets {
+  return {
+    projectIds: [],
+    taskIds: [],
+    logEntryIds: [],
+    draftIds: [],
+    submissionIds: [],
+    literatureSourceIds: [],
+    literatureNoteIds: [],
+    readingNoteIds: [],
+    mindMapNodeIds: [],
+    mindMapEdgeIds: [],
+    synthesisSectionIds: [],
+    prismaRecordIds: [],
+    prismaCriteriaProjectIds: [],
+  };
+}
 
 function requireDb() {
   if (!db) {
@@ -619,6 +678,7 @@ function isSafeForFirestore(
 export async function batchUploadUserResearchData(
   uid: string,
   snapshot: ResearchCloudSnapshot,
+  options: ResearchUploadOptions = {},
 ): Promise<ResearchUploadResult> {
   const firestore = requireDb();
   const normalizedSnapshot = normalizeResearchSnapshot(snapshot);
@@ -635,6 +695,66 @@ export async function batchUploadUserResearchData(
     batch = writeBatch(firestore);
     operationCount = 0;
   }
+
+  function deleteDocument(segments: readonly string[]) {
+    batch.delete(doc(firestore, segments.join("/")));
+    operationCount += 1;
+  }
+
+  async function deleteCollectionRecords(
+    ids: string[],
+    getSegments: (uid: string, id: string) => readonly string[],
+  ) {
+    ids.forEach((id) => deleteDocument(getSegments(uid, id)));
+    await commitIfNeeded();
+  }
+
+  const permanentDeletionTargets =
+    options.permanentDeletionTargets ?? emptyPermanentDeletionTargets;
+
+  await deleteCollectionRecords(permanentDeletionTargets.projectIds, (userId, id) =>
+    getUserResearchProjectDocumentSegments(userId, id),
+  );
+  await deleteCollectionRecords(permanentDeletionTargets.taskIds, (userId, id) =>
+    getUserResearchTaskDocumentSegments(userId, id),
+  );
+  await deleteCollectionRecords(permanentDeletionTargets.logEntryIds, (userId, id) =>
+    getUserResearchLogEntryDocumentSegments(userId, id),
+  );
+  await deleteCollectionRecords(permanentDeletionTargets.draftIds, (userId, id) =>
+    getUserResearchDraftDocumentSegments(userId, id),
+  );
+  await deleteCollectionRecords(permanentDeletionTargets.submissionIds, (userId, id) =>
+    getUserResearchSubmissionDocumentSegments(userId, id),
+  );
+  await deleteCollectionRecords(
+    permanentDeletionTargets.literatureSourceIds,
+    (userId, id) => getUserResearchLiteratureSourceDocumentSegments(userId, id),
+  );
+  await deleteCollectionRecords(
+    permanentDeletionTargets.literatureNoteIds,
+    (userId, id) => getUserResearchLiteratureNoteDocumentSegments(userId, id),
+  );
+  await deleteCollectionRecords(permanentDeletionTargets.readingNoteIds, (userId, id) =>
+    getUserResearchReadingNoteDocumentSegments(userId, id),
+  );
+  await deleteCollectionRecords(permanentDeletionTargets.mindMapNodeIds, (userId, id) =>
+    getUserResearchMindMapNodeDocumentSegments(userId, id),
+  );
+  await deleteCollectionRecords(permanentDeletionTargets.mindMapEdgeIds, (userId, id) =>
+    getUserResearchMindMapEdgeDocumentSegments(userId, id),
+  );
+  await deleteCollectionRecords(
+    permanentDeletionTargets.synthesisSectionIds,
+    (userId, id) => getUserResearchSynthesisSectionDocumentSegments(userId, id),
+  );
+  await deleteCollectionRecords(permanentDeletionTargets.prismaRecordIds, (userId, id) =>
+    getUserResearchPrismaRecordDocumentSegments(userId, id),
+  );
+  await deleteCollectionRecords(
+    permanentDeletionTargets.prismaCriteriaProjectIds,
+    (userId, id) => getUserResearchPrismaCriteriaDocumentSegments(userId, id),
+  );
 
   async function addCollection<T extends SyncRecord>(
     collectionName: SnapshotCollectionKey,
@@ -852,12 +972,182 @@ function syncRecordToCriteria(record: CriteriaSyncRecord): ResearchPrismaCriteri
   };
 }
 
+function normalizePermanentDeletionProjectIds(input: string[] | undefined) {
+  return Array.from(
+    new Set((input ?? []).filter((id): id is string => typeof id === "string" && id.trim() !== ""))
+  );
+}
+
+function isDeletedProjectRecord(
+  record: { projectId?: string },
+  deletedProjectIds: Set<string>,
+) {
+  return Boolean(record.projectId && deletedProjectIds.has(record.projectId));
+}
+
+function filterPermanentlyDeletedProjects(
+  snapshot: ResearchCloudSnapshot,
+  deletedProjectIds: Set<string>,
+): ResearchCloudSnapshot {
+  if (deletedProjectIds.size === 0) {
+    return snapshot;
+  }
+
+  return {
+    projects: snapshot.projects.filter((project) => !deletedProjectIds.has(project.id)),
+    tasks: snapshot.tasks.filter((task) => !isDeletedProjectRecord(task, deletedProjectIds)),
+    logEntries: snapshot.logEntries.filter(
+      (entry) => !isDeletedProjectRecord(entry, deletedProjectIds),
+    ),
+    drafts: snapshot.drafts.filter((draft) => !isDeletedProjectRecord(draft, deletedProjectIds)),
+    submissions: snapshot.submissions.filter(
+      (submission) => !isDeletedProjectRecord(submission, deletedProjectIds),
+    ),
+    literatureSources: snapshot.literatureSources.filter(
+      (source) => !isDeletedProjectRecord(source, deletedProjectIds),
+    ),
+    literatureNotes: snapshot.literatureNotes.filter(
+      (note) => !isDeletedProjectRecord(note, deletedProjectIds),
+    ),
+    readingNotes: snapshot.readingNotes.filter(
+      (note) => !isDeletedProjectRecord(note, deletedProjectIds),
+    ),
+    mindMapNodes: snapshot.mindMapNodes.filter(
+      (node) => !isDeletedProjectRecord(node, deletedProjectIds),
+    ),
+    mindMapEdges: snapshot.mindMapEdges.filter(
+      (edge) => !isDeletedProjectRecord(edge, deletedProjectIds),
+    ),
+    synthesisSections: snapshot.synthesisSections.filter(
+      (section) => !isDeletedProjectRecord(section, deletedProjectIds),
+    ),
+    prismaRecords: snapshot.prismaRecords.filter(
+      (record) => !isDeletedProjectRecord(record, deletedProjectIds),
+    ),
+    prismaCriteria: snapshot.prismaCriteria.filter(
+      (criteria) => !deletedProjectIds.has(criteria.projectId),
+    ),
+  };
+}
+
+function appendUnique(target: string[], values: string[]) {
+  values.forEach((value) => {
+    if (!target.includes(value)) {
+      target.push(value);
+    }
+  });
+}
+
+function collectPermanentDeletionTargets(
+  snapshots: ResearchCloudSnapshot[],
+  projectIds: string[],
+): ResearchPermanentDeletionTargets {
+  const deletedProjectIds = new Set(projectIds);
+  const targets = createEmptyPermanentDeletionTargets();
+
+  targets.projectIds = projectIds;
+
+  snapshots.forEach((snapshot) => {
+    appendUnique(
+      targets.taskIds,
+      snapshot.tasks
+        .filter((task) => isDeletedProjectRecord(task, deletedProjectIds))
+        .map((task) => task.id),
+    );
+    appendUnique(
+      targets.logEntryIds,
+      snapshot.logEntries
+        .filter((entry) => isDeletedProjectRecord(entry, deletedProjectIds))
+        .map((entry) => entry.id),
+    );
+    appendUnique(
+      targets.draftIds,
+      snapshot.drafts
+        .filter((draft) => isDeletedProjectRecord(draft, deletedProjectIds))
+        .map((draft) => draft.id),
+    );
+    appendUnique(
+      targets.submissionIds,
+      snapshot.submissions
+        .filter((submission) => isDeletedProjectRecord(submission, deletedProjectIds))
+        .map((submission) => submission.id),
+    );
+    appendUnique(
+      targets.literatureSourceIds,
+      snapshot.literatureSources
+        .filter((source) => isDeletedProjectRecord(source, deletedProjectIds))
+        .map((source) => source.id),
+    );
+    appendUnique(
+      targets.literatureNoteIds,
+      snapshot.literatureNotes
+        .filter((note) => isDeletedProjectRecord(note, deletedProjectIds))
+        .map((note) => note.id),
+    );
+    appendUnique(
+      targets.readingNoteIds,
+      snapshot.readingNotes
+        .filter((note) => isDeletedProjectRecord(note, deletedProjectIds))
+        .map((note) => note.id),
+    );
+    appendUnique(
+      targets.mindMapNodeIds,
+      snapshot.mindMapNodes
+        .filter((node) => isDeletedProjectRecord(node, deletedProjectIds))
+        .map((node) => node.id),
+    );
+    appendUnique(
+      targets.mindMapEdgeIds,
+      snapshot.mindMapEdges
+        .filter((edge) => isDeletedProjectRecord(edge, deletedProjectIds))
+        .map((edge) => edge.id),
+    );
+    appendUnique(
+      targets.synthesisSectionIds,
+      snapshot.synthesisSections
+        .filter((section) => isDeletedProjectRecord(section, deletedProjectIds))
+        .map((section) => section.id),
+    );
+    appendUnique(
+      targets.prismaRecordIds,
+      snapshot.prismaRecords
+        .filter((record) => isDeletedProjectRecord(record, deletedProjectIds))
+        .map((record) => record.id),
+    );
+    appendUnique(
+      targets.prismaCriteriaProjectIds,
+      snapshot.prismaCriteria
+        .filter((criteria) => deletedProjectIds.has(criteria.projectId))
+        .map((criteria) => criteria.projectId),
+    );
+  });
+
+  return targets;
+}
+
 export function mergeResearchDataForSync(
   localSnapshotInput: ResearchCloudSnapshot,
   cloudSnapshotInput: ResearchCloudSnapshot,
+  options: ResearchMergeOptions = {},
 ): ResearchMergeResult {
-  const localSnapshot = normalizeResearchSnapshot(localSnapshotInput);
-  const cloudSnapshot = normalizeResearchSnapshot(cloudSnapshotInput);
+  const normalizedLocalSnapshot = normalizeResearchSnapshot(localSnapshotInput);
+  const normalizedCloudSnapshot = normalizeResearchSnapshot(cloudSnapshotInput);
+  const permanentlyDeletedProjectIds = normalizePermanentDeletionProjectIds(
+    options.permanentlyDeletedProjectIds,
+  );
+  const deletedProjectIdSet = new Set(permanentlyDeletedProjectIds);
+  const permanentDeletionTargets = collectPermanentDeletionTargets(
+    [normalizedLocalSnapshot, normalizedCloudSnapshot],
+    permanentlyDeletedProjectIds,
+  );
+  const localSnapshot = filterPermanentlyDeletedProjects(
+    normalizedLocalSnapshot,
+    deletedProjectIdSet,
+  );
+  const cloudSnapshot = filterPermanentlyDeletedProjects(
+    normalizedCloudSnapshot,
+    deletedProjectIdSet,
+  );
   const totals = { addedCount: 0, updatedCount: 0, dedupedCount: 0 };
   const prismaCriteria = mergeSnapshotCollection(
     localSnapshot.prismaCriteria.map(criteriaToSyncRecord),
@@ -1000,6 +1290,7 @@ export function mergeResearchDataForSync(
       totals,
     ),
     prismaCriteria,
+    permanentDeletionTargets,
     ...totals,
   };
 }
@@ -1008,9 +1299,16 @@ export async function pushMergedUserResearchData(
   uid: string,
   localSnapshot: ResearchCloudSnapshot,
   cloudSnapshot: ResearchCloudSnapshot,
+  options: ResearchMergeOptions = {},
 ) {
-  const mergeResult = mergeResearchDataForSync(localSnapshot, cloudSnapshot);
-  const uploadResult = await batchUploadUserResearchData(uid, mergeResult);
+  const mergeResult = mergeResearchDataForSync(
+    localSnapshot,
+    cloudSnapshot,
+    options,
+  );
+  const uploadResult = await batchUploadUserResearchData(uid, mergeResult, {
+    permanentDeletionTargets: mergeResult.permanentDeletionTargets,
+  });
 
   return {
     ...mergeResult,
