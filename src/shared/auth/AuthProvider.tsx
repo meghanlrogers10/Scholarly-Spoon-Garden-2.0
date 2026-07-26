@@ -79,6 +79,28 @@ function getFriendlyAuthError(authError: unknown, fallback: string) {
   return authError instanceof Error ? authError.message : fallback;
 }
 
+function getUnsupportedGoogleSignInHostMessage() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const { hostname, protocol } = window.location;
+
+  if (protocol === "file:") {
+    return "Google sign-in cannot run from a downloaded file. Open the deployed app in your browser, or use email/password sign-in for this local copy.";
+  }
+
+  if (protocol !== "http:" && protocol !== "https:") {
+    return "Google sign-in needs an http or https app address. Open the deployed app in your browser, or use email/password sign-in for this local copy.";
+  }
+
+  if (!hostname) {
+    return "Google sign-in cannot validate this app address. Open the deployed app in your browser, or use email/password sign-in for this local copy.";
+  }
+
+  return null;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(isFirebaseConfigured);
@@ -143,6 +165,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = useCallback(async () => {
     if (!auth) {
       setError("Firebase is not configured for this app build.");
+      return;
+    }
+
+    const unsupportedHostMessage = getUnsupportedGoogleSignInHostMessage();
+    if (unsupportedHostMessage) {
+      setError(unsupportedHostMessage);
       return;
     }
 
