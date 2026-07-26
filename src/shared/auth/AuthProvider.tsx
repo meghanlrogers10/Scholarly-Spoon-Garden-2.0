@@ -58,6 +58,24 @@ function getFriendlyAuthError(authError: unknown, fallback: string) {
     return "This sign-in method is not enabled yet in Firebase Console.";
   }
 
+  if (code === "auth/unauthorized-domain") {
+    const hostname =
+      typeof window === "undefined" ? "this domain" : window.location.hostname;
+    return `Firebase does not authorize ${hostname} for OAuth sign-in. Add it under Firebase Console > Authentication > Settings > Authorized domains.`;
+  }
+
+  if (code === "auth/invalid-api-key") {
+    return "The deployed Firebase API key is invalid. Check the Netlify Firebase environment variables.";
+  }
+
+  if (code === "auth/network-request-failed") {
+    return "Firebase sign-in could not reach the network. Check your connection and try again.";
+  }
+
+  if (code === "auth/too-many-requests") {
+    return "Firebase temporarily blocked sign-in attempts. Wait a little while and try again.";
+  }
+
   return authError instanceof Error ? authError.message : fallback;
 }
 
