@@ -143,7 +143,11 @@ export function ResearchLogPage() {
   const currentProject = project;
   const entries = getEntriesForProject(projectId);
   const branchNames = Array.from(
-    new Set(["Main", ...entries.map((entry) => entry.branch || "Main")]),
+    new Set(
+      entries.length > 0
+        ? entries.map((entry) => entry.branch || "Main")
+        : ["Main"],
+    ),
   );
   const activeBranch = branchNames.includes(selectedBranch) ? selectedBranch : "Main";
   const visibleEntries = entries.filter(
