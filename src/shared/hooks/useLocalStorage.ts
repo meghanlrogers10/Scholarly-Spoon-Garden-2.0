@@ -68,6 +68,10 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
           ? (nextValueOrUpdater as (currentValue: T) => T)(valueRef.current)
           : nextValueOrUpdater;
 
+      if (JSON.stringify(valueRef.current) === JSON.stringify(nextValue)) {
+        return;
+      }
+
       valueRef.current = nextValue;
       setValue(nextValue);
       writeLocalStorageValue(key, nextValue);
