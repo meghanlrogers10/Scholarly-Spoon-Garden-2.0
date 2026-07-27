@@ -1,7 +1,7 @@
 {
-  "name": "Dr. Spoonbloom",
-  "short_name": "Spoonbloom",
-  "description": "A scholarly garden workspace with Dr. Spoonbloom.",
+  "name": "Scholarly Spoon Garden",
+  "short_name": "Scholarly Spoon Garden",
+  "description": "A scholarly garden workspace for academic planning.",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
