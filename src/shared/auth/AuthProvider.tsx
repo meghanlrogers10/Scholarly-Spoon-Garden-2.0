@@ -63,9 +63,16 @@ function getFriendlyAuthError(authError: unknown, fallback: string) {
   }
 
   if (code === "auth/unauthorized-domain") {
-    const hostname =
-      typeof window === "undefined" ? "this domain" : window.location.hostname;
-    return `Firebase does not authorize ${hostname} for OAuth sign-in. Add it under Firebase Console > Authentication > Settings > Authorized domains.`;
+    const { hostname, origin } =
+      typeof window === "undefined"
+        ? { hostname: "", origin: "this app address" }
+        : window.location;
+
+    if (hostname === "127.0.0.1" || hostname === "[::1]") {
+      return "Google sign-in is authorized for localhost, not this IP address. Open http://localhost:5173/ instead of 127.0.0.1, then try again.";
+    }
+
+    return `Firebase does not authorize ${origin} for OAuth sign-in. Add this exact address under Firebase Console > Authentication > Settings > Authorized domains.`;
   }
 
   if (code === "auth/invalid-api-key") {
