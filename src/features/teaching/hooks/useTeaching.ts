@@ -258,14 +258,63 @@ export function useTeaching() {
     [semesters]
   );
 
+  const activeSemesterIds = useMemo(
+    () => new Set(activeSemesters.map((semester) => semester.id)),
+    [activeSemesters]
+  );
+
   const activeCourses = useMemo(
-    () => sortCourses(courses.filter((course) => course.status === "active")),
-    [courses]
+    () =>
+      sortCourses(
+        courses.filter(
+          (course) =>
+            course.status === "active" && activeSemesterIds.has(course.semesterId)
+        )
+      ),
+    [activeSemesterIds, courses]
   );
 
   const archivedCourses = useMemo(
     () => sortCourses(courses.filter((course) => course.status === "archived")),
     [courses]
+  );
+
+  const activeCourseIds = useMemo(
+    () => new Set(activeCourses.map((course) => course.id)),
+    [activeCourses]
+  );
+
+  const activeMeetings = useMemo(
+    () => meetings.filter((meeting) => activeCourseIds.has(meeting.courseId)),
+    [activeCourseIds, meetings]
+  );
+
+  const activePrepSessions = useMemo(
+    () => prepSessions.filter((session) => activeCourseIds.has(session.courseId)),
+    [activeCourseIds, prepSessions]
+  );
+
+  const activeGradingItems = useMemo(
+    () => gradingItems.filter((item) => activeCourseIds.has(item.courseId)),
+    [activeCourseIds, gradingItems]
+  );
+
+  const activeTaItems = useMemo(
+    () => taItems.filter((item) => activeCourseIds.has(item.courseId)),
+    [activeCourseIds, taItems]
+  );
+
+  const activeOfficeHourVisits = useMemo(
+    () => officeHourVisits.filter((visit) => activeCourseIds.has(visit.courseId)),
+    [activeCourseIds, officeHourVisits]
+  );
+
+  const activeAnnouncementReminders = useMemo(
+    () =>
+      announcementReminders.filter((reminder) =>
+        activeCourseIds.has(reminder.courseId)
+      ),
+    [activeCourseIds, announcementReminders]
   );
 
   function createSemester(input: NewTeachingSemesterInput) {
@@ -993,25 +1042,25 @@ export function useTeaching() {
 
   function getPendingGradingItems() {
     return sortByDate(
-      gradingItems.filter(
+      activeGradingItems.filter(
         (item) => item.status === "pending" || item.status === "in-progress"
       )
     );
   }
 
   function getPendingTaItems() {
-    return sortByDate(taItems.filter((item) => !item.completed));
+    return sortByDate(activeTaItems.filter((item) => !item.completed));
   }
 
   function getOpenOfficeHourFollowUps() {
     return sortByDate(
-      officeHourVisits.filter((visit) => !visit.followUpCompleted)
+      activeOfficeHourVisits.filter((visit) => !visit.followUpCompleted)
     );
   }
 
   function getUpcomingTeachingDeadlines(days = 7) {
     return [
-      ...meetings
+      ...activeMeetings
         .filter((meeting) => !meeting.canceled)
         .map((meeting) => ({
           id: meeting.id,
@@ -1024,7 +1073,7 @@ export function useTeaching() {
           sourceId: meeting.id,
           sourceType: "teaching-meeting",
         })),
-      ...prepSessions
+      ...activePrepSessions
         .filter((session) => !session.completed)
         .map((session) => ({
           id: session.id,
@@ -1111,13 +1160,13 @@ export function useTeaching() {
   }
 
   function getTeachingAttentionItems() {
-    const upcomingMeetings = meetings.filter((meeting) => {
+    const upcomingMeetings = activeMeetings.filter((meeting) => {
       const distance = getDateDistanceInDays(meeting.date);
 
       return !meeting.canceled && distance !== undefined && distance >= 0;
     });
 
-    const prepAttentionItems = prepSessions
+    const prepAttentionItems = activePrepSessions
       .filter((session) => !session.completed)
       .map((session) => {
         const matchingMeeting = upcomingMeetings.find(
@@ -1232,9 +1281,9 @@ export function useTeaching() {
   }
 
   function getTaReminderAlerts(courseId?: string): TeachingTaReminderAlert[] {
-    const relevantItems = taItems.filter(
-      (item) => !courseId || item.courseId === courseId
-    );
+    const relevantItems = courseId
+      ? taItems.filter((item) => item.courseId === courseId)
+      : activeTaItems;
 
     return relevantItems.flatMap((item) => {
       const assignmentName = item.assignmentName || item.task || "grading";
@@ -1370,8 +1419,11 @@ export function useTeaching() {
   }
 
   function getAnnouncementAlerts(courseId?: string): TeachingAnnouncementAlert[] {
-    return announcementReminders
-      .filter((reminder) => !courseId || reminder.courseId === courseId)
+    const relevantReminders = courseId
+      ? announcementReminders.filter((reminder) => reminder.courseId === courseId)
+      : activeAnnouncementReminders;
+
+    return relevantReminders
       .filter((reminder) => reminder.status === "planned" || reminder.status === "drafted")
       .flatMap((reminder) => {
         const alerts: TeachingAnnouncementAlert[] = [];
@@ -1427,6 +1479,7 @@ export function useTeaching() {
     archivedSemesters,
     activeCourses,
     archivedCourses,
+    activeGradingItems,
     createSemester,
     updateSemester,
     archiveSemester,

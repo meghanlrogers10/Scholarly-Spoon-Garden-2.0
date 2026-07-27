@@ -130,7 +130,7 @@ export function TeachingPage() {
     archivedCourses,
     meetings,
     prepSessions,
-    gradingItems,
+    activeGradingItems,
     taItems,
     officeHourVisits,
     courseNotes,
@@ -191,10 +191,10 @@ export function TeachingPage() {
   const lowSpoonItems = sortLowSpoonItems(attentionItems).slice(0, 5);
   const taReminderAlerts = getTaReminderAlerts();
   const announcementAlerts = getAnnouncementAlerts();
-  const gradingEstimateMinutes = gradingItems
+  const gradingEstimateMinutes = activeGradingItems
     .filter((item) => item.status === "pending" || item.status === "in-progress")
     .reduce((total, item) => total + (item.estimatedMinutes ?? 45), 0);
-  const highSpoonGradingCount = gradingItems.filter(
+  const highSpoonGradingCount = activeGradingItems.filter(
     (item) =>
       (item.status === "pending" || item.status === "in-progress") &&
       (item.spoonCost ?? 3) >= 4,
@@ -316,7 +316,7 @@ export function TeachingPage() {
         <span>{archivedCourses.length} archived courses</span>
         <span>{meetings.length} meetings</span>
         <span>{prepSessions.length} prep sessions</span>
-        <span>{gradingItems.length} grading items</span>
+        <span>{activeGradingItems.length} grading items</span>
         <span>{taItems.length} TA items</span>
         <span>{officeHourVisits.length} office hour visits</span>
         <span>{courseNotes.length} notes</span>
