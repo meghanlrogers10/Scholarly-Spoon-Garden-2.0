@@ -2,8 +2,8 @@ import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
   onAuthStateChanged,
-  signInWithCredential,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut as firebaseSignOut,
   type User,
 } from "firebase/auth";
@@ -19,7 +19,6 @@ import {
   isFirebaseConfigured,
   missingFirebaseEnvKeys,
 } from "../firebase/firebaseClient";
-import { requestGoogleAuthAccessToken } from "../google/googleIdentity";
 import { AuthContext, type AuthContextValue } from "./authContext";
 
 function getFriendlyAuthError(authError: unknown, fallback: string) {
@@ -181,9 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setError(null);
     try {
-      const accessToken = await requestGoogleAuthAccessToken();
-      const credential = GoogleAuthProvider.credential(null, accessToken);
-      await signInWithCredential(auth, credential);
+      await signInWithPopup(auth, new GoogleAuthProvider());
     } catch (authError) {
       setError(
         getFriendlyAuthError(authError, "Google sign-in did not complete.")

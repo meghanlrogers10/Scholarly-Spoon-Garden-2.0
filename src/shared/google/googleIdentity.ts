@@ -81,10 +81,6 @@ export async function requestGoogleCalendarAccessToken(): Promise<string> {
   return requestGoogleAccessToken(GOOGLE_CALENDAR_READONLY_SCOPE, "consent");
 }
 
-export async function requestGoogleAuthAccessToken(): Promise<string> {
-  return requestGoogleAccessToken("email profile openid", "select_account");
-}
-
 async function requestGoogleAccessToken(
   scope: string,
   prompt: "consent" | "select_account",
