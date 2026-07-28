@@ -605,6 +605,18 @@ export function useTeaching() {
     });
   }
 
+  function clearMeetingsForCourse(courseId: string) {
+    const now = new Date().toISOString();
+
+    setMeetings((currentMeetings) =>
+      currentMeetings.map((meeting) =>
+        meeting.courseId === courseId && !isDeletedRecord(meeting)
+          ? { ...meeting, deletedAt: now, updatedAt: now }
+          : meeting
+      )
+    );
+  }
+
   function createPrepSession(input: NewTeachingPrepSessionInput) {
     const prepSession = createRecord<
       NewTeachingPrepSessionInput,
@@ -1587,6 +1599,7 @@ export function useTeaching() {
     updateMeeting,
     deleteMeeting,
     replaceMeetingsForCourse,
+    clearMeetingsForCourse,
     createPrepSession,
     updatePrepSession,
     deletePrepSession,

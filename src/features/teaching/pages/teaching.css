@@ -78,6 +78,11 @@
   color: var(--color-deep-purple);
 }
 
+.teaching-secondary-button--danger {
+  border-color: rgba(185, 28, 28, 0.24);
+  color: #991b1b;
+}
+
 .teaching-status-strip {
   display: flex;
   flex-wrap: wrap;

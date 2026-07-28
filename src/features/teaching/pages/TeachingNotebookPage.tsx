@@ -44,6 +44,71 @@ function dateToOrder(date: string, fallback: number) {
     : fallback;
 }
 
+function formatDateParts(year: number, month: number, day: number) {
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return "";
+  }
+
+  return [
+    String(year).padStart(4, "0"),
+    String(month).padStart(2, "0"),
+    String(day).padStart(2, "0"),
+  ].join("-");
+}
+
+function normalizeImportedDate(value: string) {
+  const cleanedValue = value.trim();
+
+  if (!cleanedValue) {
+    return "";
+  }
+
+  const dateOnlyValue = cleanedValue.split(/\s+/)[0];
+  const isoMatch = dateOnlyValue.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+
+  if (isoMatch) {
+    return formatDateParts(
+      Number(isoMatch[1]),
+      Number(isoMatch[2]),
+      Number(isoMatch[3]),
+    );
+  }
+
+  const slashMatch = dateOnlyValue.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+
+  if (slashMatch) {
+    const yearValue = Number(slashMatch[3]);
+    const fullYear = yearValue < 100 ? 2000 + yearValue : yearValue;
+
+    return formatDateParts(
+      fullYear,
+      Number(slashMatch[1]),
+      Number(slashMatch[2]),
+    );
+  }
+
+  const excelSerial = Number(cleanedValue);
+
+  if (Number.isFinite(excelSerial) && excelSerial > 0) {
+    const excelEpoch = Date.UTC(1899, 11, 30);
+    const date = new Date(excelEpoch + Math.round(excelSerial) * 86_400_000);
+
+    return formatDateParts(
+      date.getUTCFullYear(),
+      date.getUTCMonth() + 1,
+      date.getUTCDate(),
+    );
+  }
+
+  return cleanedValue;
+}
+
 function csvEscape(value: string | boolean) {
   const stringValue = String(value);
 
@@ -144,6 +209,7 @@ export function TeachingNotebookPage() {
     updateMeeting,
     deleteMeeting,
     replaceMeetingsForCourse,
+    clearMeetingsForCourse,
   } = useTeaching();
   const [editingMeeting, setEditingMeeting] = useState<TeachingMeeting>();
   const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
@@ -231,6 +297,20 @@ export function TeachingNotebookPage() {
     updateMeeting(meeting.id, { canceled: !meeting.canceled });
   }
 
+  function handleClearSchedule() {
+    if (meetings.length === 0) {
+      return;
+    }
+
+    if (
+      window.confirm(
+        `Clear all ${meetings.length} class meeting rows for ${currentCourse.code || currentCourse.title}? This cannot be undone.`,
+      )
+    ) {
+      clearMeetingsForCourse(currentCourse.id);
+    }
+  }
+
   function handleGenerateSchedule(input: GenerateScheduleInput) {
     const start = new Date(`${input.startDate}T00:00:00`);
     const end = new Date(`${input.endDate}T00:00:00`);
@@ -296,14 +376,14 @@ export function TeachingNotebookPage() {
 
     const rows = parseCsv(await file.text());
     const [headers = [], ...dataRows] = rows;
-    const normalizedHeaders = headers.map((header) => header.trim());
+    const normalizedHeaders = headers.map((header) => header.trim().toLowerCase());
     const rowsToImport = dataRows
       .map((row, rowIndex) => {
         const valueFor = (column: string) => {
-          const columnIndex = normalizedHeaders.indexOf(column);
+          const columnIndex = normalizedHeaders.indexOf(column.toLowerCase());
           return columnIndex >= 0 ? row[columnIndex]?.trim() ?? "" : "";
         };
-        const date = valueFor("date");
+        const date = normalizeImportedDate(valueFor("date"));
 
         return {
           courseId: currentCourse.id,
@@ -396,6 +476,14 @@ export function TeachingNotebookPage() {
             onClick={() => fileInputRef.current?.click()}
           >
             Import CSV
+          </button>
+          <button
+            className="teaching-secondary-button teaching-secondary-button--danger"
+            type="button"
+            onClick={handleClearSchedule}
+            disabled={meetings.length === 0}
+          >
+            Clear Schedule
           </button>
           <input
             ref={fileInputRef}
