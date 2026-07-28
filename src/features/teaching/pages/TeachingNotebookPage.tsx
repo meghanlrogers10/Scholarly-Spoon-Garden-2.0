@@ -143,6 +143,7 @@ export function TeachingNotebookPage() {
     createMeeting,
     updateMeeting,
     deleteMeeting,
+    replaceMeetingsForCourse,
   } = useTeaching();
   const [editingMeeting, setEditingMeeting] = useState<TeachingMeeting>();
   const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
@@ -296,7 +297,6 @@ export function TeachingNotebookPage() {
     const rows = parseCsv(await file.text());
     const [headers = [], ...dataRows] = rows;
     const normalizedHeaders = headers.map((header) => header.trim());
-    const existingDates = new Set(meetings.map((meeting) => meeting.date));
     const rowsToImport = dataRows
       .map((row, rowIndex) => {
         const valueFor = (column: string) => {
@@ -304,10 +304,6 @@ export function TeachingNotebookPage() {
           return columnIndex >= 0 ? row[columnIndex]?.trim() ?? "" : "";
         };
         const date = valueFor("date");
-
-        if (date && existingDates.has(date)) {
-          return undefined;
-        }
 
         return {
           courseId: currentCourse.id,
@@ -327,9 +323,14 @@ export function TeachingNotebookPage() {
 
     if (
       rowsToImport.length > 0 &&
-      window.confirm(`Import ${rowsToImport.length} meeting rows?`)
+      window.confirm(
+        [
+          `Replace the current schedule with ${rowsToImport.length} imported meeting rows?`,
+          "Rows with matching dates will be updated. Current rows not in the file will be removed from this course schedule.",
+        ].join("\n\n"),
+      )
     ) {
-      rowsToImport.forEach((row) => createMeeting(row));
+      replaceMeetingsForCourse(currentCourse.id, rowsToImport);
     }
 
     event.target.value = "";

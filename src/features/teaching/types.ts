@@ -215,6 +215,7 @@ export type TeachingMeeting = {
   order: number;
   createdAt: string;
   updatedAt: string;
+  deletedAt?: string;
 };
 
 export type TeachingPrepSession = {

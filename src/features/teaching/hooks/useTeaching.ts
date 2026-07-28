@@ -188,6 +188,22 @@ function addDays(value: string, days: number) {
   return date.toISOString().slice(0, 10);
 }
 
+function isDeletedRecord(record: { deletedAt?: string }) {
+  return Boolean(record.deletedAt);
+}
+
+function meetingImportKey(meeting: Pick<TeachingMeeting, "date" | "topic" | "week">) {
+  if (meeting.date.trim()) {
+    return `date:${meeting.date.trim()}`;
+  }
+
+  return [
+    "loose",
+    meeting.week.trim().toLowerCase(),
+    meeting.topic.trim().toLowerCase(),
+  ].join("|");
+}
+
 export function useTeaching() {
   const [semesters, setSemesters] = useLocalStorage<TeachingSemester[]>(
     TEACHING_SEMESTERS_STORAGE_KEY,
@@ -285,7 +301,11 @@ export function useTeaching() {
   );
 
   const activeMeetings = useMemo(
-    () => meetings.filter((meeting) => activeCourseIds.has(meeting.courseId)),
+    () =>
+      meetings.filter(
+        (meeting) =>
+          activeCourseIds.has(meeting.courseId) && !isDeletedRecord(meeting)
+      ),
     [activeCourseIds, meetings]
   );
 
@@ -504,16 +524,85 @@ export function useTeaching() {
     setMeetings((currentMeetings) =>
       currentMeetings.map((meeting) =>
         meeting.id === meetingId
-          ? { ...meeting, ...input, updatedAt: now }
+          ? { ...meeting, ...input, deletedAt: undefined, updatedAt: now }
           : meeting
       )
     );
   }
 
   function deleteMeeting(meetingId: string) {
+    const now = new Date().toISOString();
+
     setMeetings((currentMeetings) =>
-      currentMeetings.filter((meeting) => meeting.id !== meetingId)
+      currentMeetings.map((meeting) =>
+        meeting.id === meetingId
+          ? { ...meeting, deletedAt: now, updatedAt: now }
+          : meeting
+      )
     );
+  }
+
+  function replaceMeetingsForCourse(
+    courseId: string,
+    inputs: NewTeachingMeetingInput[],
+  ) {
+    const now = new Date().toISOString();
+
+    setMeetings((currentMeetings) => {
+      const courseMeetings = currentMeetings.filter(
+        (meeting) => meeting.courseId === courseId,
+      );
+      const meetingsByKey = new Map(
+        courseMeetings.map((meeting) => [meetingImportKey(meeting), meeting]),
+      );
+      const importedKeys = new Set<string>();
+      const replacementMeetings = inputs.map((input) => {
+        const key = meetingImportKey(input);
+        const existing = meetingsByKey.get(key);
+
+        importedKeys.add(key);
+
+        if (existing) {
+          return {
+            ...existing,
+            ...input,
+            courseId,
+            deletedAt: undefined,
+            updatedAt: now,
+          };
+        }
+
+        return {
+          id: crypto.randomUUID(),
+          ...input,
+          courseId,
+          createdAt: now,
+          updatedAt: now,
+        };
+      });
+      const replacementIds = new Set(replacementMeetings.map((meeting) => meeting.id));
+      const tombstonedMeetings = courseMeetings
+        .filter(
+          (meeting) =>
+            !replacementIds.has(meeting.id) &&
+            !importedKeys.has(meetingImportKey(meeting)) &&
+            !isDeletedRecord(meeting),
+        )
+        .map((meeting) => ({
+          ...meeting,
+          deletedAt: now,
+          updatedAt: now,
+        }));
+
+      return [
+        ...currentMeetings.filter((meeting) => meeting.courseId !== courseId),
+        ...replacementMeetings,
+        ...tombstonedMeetings,
+        ...courseMeetings.filter(
+          (meeting) => isDeletedRecord(meeting) && !replacementIds.has(meeting.id),
+        ),
+      ];
+    });
   }
 
   function createPrepSession(input: NewTeachingPrepSessionInput) {
@@ -994,7 +1083,9 @@ export function useTeaching() {
 
   function getMeetingsForCourse(courseId: string) {
     return sortByDate(
-      meetings.filter((meeting) => meeting.courseId === courseId)
+      meetings.filter(
+        (meeting) => meeting.courseId === courseId && !isDeletedRecord(meeting)
+      )
     ).sort((a, b) => a.order - b.order);
   }
 
@@ -1495,6 +1586,7 @@ export function useTeaching() {
     createMeeting,
     updateMeeting,
     deleteMeeting,
+    replaceMeetingsForCourse,
     createPrepSession,
     updatePrepSession,
     deletePrepSession,
