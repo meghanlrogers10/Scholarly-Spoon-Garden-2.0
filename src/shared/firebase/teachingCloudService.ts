@@ -765,6 +765,11 @@ function chooseMergedRecord<T extends SyncRecord>(localItem: T, cloudItem: T): T
       true;
   }
 
+  if ("deletedAt" in localItem || "deletedAt" in cloudItem) {
+    merged.deletedAt =
+      (newerItem as { deletedAt?: string | null }).deletedAt ?? null;
+  }
+
   return merged as T;
 }
 
@@ -875,12 +880,13 @@ export function mergeTeachingDataForSync(
       localSnapshot.meetings,
       cloudSnapshot.meetings,
       (meeting) =>
-        [
-          meeting.courseId,
-          meeting.date,
-          normalizeTextKey(meeting.topic),
-          normalizeTextKey(meeting.week),
-        ].join("|"),
+        meeting.date
+          ? [meeting.courseId, meeting.date].join("|")
+          : [
+              meeting.courseId,
+              normalizeTextKey(meeting.topic),
+              normalizeTextKey(meeting.week),
+            ].join("|"),
       totals,
     ),
     prepSessions: mergeSnapshotCollection(

@@ -188,7 +188,7 @@ function addDays(value: string, days: number) {
   return date.toISOString().slice(0, 10);
 }
 
-function isDeletedRecord(record: { deletedAt?: string }) {
+function isDeletedRecord(record: { deletedAt?: string | null }) {
   return Boolean(record.deletedAt);
 }
 
@@ -524,7 +524,7 @@ export function useTeaching() {
     setMeetings((currentMeetings) =>
       currentMeetings.map((meeting) =>
         meeting.id === meetingId
-          ? { ...meeting, ...input, deletedAt: undefined, updatedAt: now }
+          ? { ...meeting, ...input, deletedAt: null, updatedAt: now }
           : meeting
       )
     );
@@ -567,7 +567,7 @@ export function useTeaching() {
             ...existing,
             ...input,
             courseId,
-            deletedAt: undefined,
+            deletedAt: null,
             updatedAt: now,
           };
         }
